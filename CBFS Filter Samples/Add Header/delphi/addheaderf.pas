@@ -591,6 +591,11 @@ var
 
 begin
   FilterPath := ConvertRelativePathToAbsolute(edtPath.Text);
+  if FilterPath = '' then 
+  begin
+    Dialogs.MessageDlg('Error: Invalid path', mtError, [mbOk], 0);
+    Exit;
+  end;
   cbfFilter.AddFilterRuleEx(FilterPath,
     '',
     cbfConstants.ACCESS_NONE,

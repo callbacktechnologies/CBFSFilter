@@ -462,8 +462,17 @@ end;
 
 
 procedure TFormFilemon.btnSetFilterClick(Sender: TObject);
+var
+  Path: string;
+
 begin
-  cbfFilter.AddFilterRule(ConvertRelativePathToAbsolute(edtPath.Text),
+  Path := ConvertRelativePathToAbsolute(edtPath.Text);
+  if Path = '' then 
+  begin
+    Dialogs.MessageDlg('Error: Invalid path', mtError, [mbOk], 0);
+    Exit;
+  end;
+  cbfFilter.AddFilterRule(Path,
     cbfConstants.FS_NE_READ or
     cbfConstants.FS_NE_WRITE or
     cbfConstants.FS_NE_CREATE or

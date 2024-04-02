@@ -281,7 +281,8 @@ begin
         end;
       except
         on E: Exception do
-          MessageDlg('Error while converting to absolute path: ' + E.Message, mtError, [mbOk], 0);
+          MessageDlg('Error while converting ' + path + ' to absolute path: ' + E.Message, mtError, [mbOk], 0);
+          Exit('');
       end;
     end;
   end;

@@ -443,6 +443,7 @@ var
 begin
   lvwEvents.Clear();
 
+ if FFilter = nil then
   FFilter := CreateFilter();
   try
     FFilter.Initialize(ProductGuid);

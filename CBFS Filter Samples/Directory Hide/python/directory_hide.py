@@ -97,10 +97,14 @@ def cb_after_enumerate_directory(params: CBFilterAfterEnumerateDirectoryEventPar
     global filter
     global folder_name_to_hide
 
-    file_name = params.file_name.lower()
+    file_name = params.file_name
+    to_compare = folder_name_to_hide
+    if platform.system() == "Windows":
+        file_name = params.file_name.lower()
+        to_compare = folder_name_to_hide.lower()
 
     # if the filesystem returns the name of the "hidden" directory, then block it
-    if file_name == folder_name_to_hide:
+    if file_name == to_compare:
         params.process_request = False
         process_name = filter.get_originator_process_name()
         print("[enumerate_directory]: %s (by %s) -> BLOCKED" % (params.file_name, process_name))
@@ -202,6 +206,9 @@ def get_cab_file():  # -> str:
         return ""
 
     cab_file = convert_relative_path_to_absolute(sys.argv[2])
+    if cab_file is None:
+        print("Error: Invalid Driver Path.")
+        return
     if not os.path.isfile(cab_file):
         print("ERROR: CAB file not found")
         print("  ->", cab_file)

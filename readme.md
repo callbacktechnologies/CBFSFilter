@@ -18,7 +18,7 @@ CBFS Filter 2022 libraries for the corresponding edition are required to run the
 | [Directory Hide](./CBFS%20Filter%20Samples/Directory%20Hide) | Hides a specified directory. |
 | [Encrypt Files](./CBFS%20Filter%20Samples/Encrypt%20Files) | Encrypts and decrypts files with simple on-the-fly encryption. |
 | [File Monitor](./CBFS%20Filter%20Samples/File%20Monitor) | Monitors and logs filesystem activity. |
-| [Filesystem Filter](./CBFS%20Filter%20Samples/Filesystem%20Filter) | A 'no-op' filesystem filter application that you can add your code to. |
+| [FileSystem Filter](./CBFS%20Filter%20Samples/FileSystem%20Filter) | A 'no-op' filesystem filter application that you can add your code to. |
 | [Placeholder](./CBFS%20Filter%20Samples/Placeholder) | Illustrates how to replace the placholder file with actual data. |
 | [Process Monitor](./CBFS%20Filter%20Samples/Process%20Monitor) | A basic process monitoring application. |
 | [Registry Monitor](./CBFS%20Filter%20Samples/Registry%20Monitor) | A basic registry monitoring application. |

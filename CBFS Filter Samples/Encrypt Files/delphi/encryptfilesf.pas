@@ -470,8 +470,17 @@ begin
 end;
 
 procedure TFormEncryptFiles.btnSetFilterClick(Sender: TObject);
+var
+  Path: string;
+
 begin
-  cbfFilter.AddFilterRule(ConvertRelativePathToAbsolute(edtPath.Text),
+  Path := ConvertRelativePathToAbsolute(edtPath.Text);
+  if Path = '' then 
+  begin
+    Dialogs.MessageDlg('Error: Invalid path', mtError, [mbOk], 0);
+    Exit;
+  end;
+  cbfFilter.AddFilterRule(Path,
     cbfConstants.ACCESS_NONE,
     cbfConstants.FS_CE_AFTER_READ or
     cbfConstants.FS_CE_BEFORE_WRITE or
@@ -486,7 +495,7 @@ begin
     cbfConstants.FS_CE_BEFORE_CLOSE,
     cbfConstants.FS_NE_NONE
   );
-  cbfFilter.AddFilterRule(ConvertRelativePathToAbsolute(edtPath.Text) + '\*.*',
+  cbfFilter.AddFilterRule(Path + '\*.*',
     cbfConstants.ACCESS_NONE,
     cbfConstants.FS_CE_AFTER_READ or
     cbfConstants.FS_CE_BEFORE_WRITE or
