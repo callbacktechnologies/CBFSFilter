@@ -1,5 +1,5 @@
 /*
- * CBFS Filter 2022 C++ Edition - Sample Project
+ * CBFS Filter 2024 C++ Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -18,7 +18,7 @@
  * Copyright (c) 2023 Callback Technologies, Inc. - All rights reserved. - www.callback.com
  *
  */
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+#define WIN32_LEAN_AND_MEAN        // Exclude rarely-used stuff from Windows headers
 
 #define _CRT_SECURE_NO_DEPRECATE
 #define _CRT_NON_CONFORMING_SWPRINTFS
@@ -67,7 +67,7 @@ typedef std::string cbt_string;
 #endif
 
 const wchar_t* g_lpGuid = _T("{713CC6CE-B3E2-4fd9-838D-E28F558F6866}");
-const wchar_t* ALTITUDE_FAKE_VALUE_FOR_DEBUG(TEXT("360000"));
+const wchar_t* ALTITUDE_FAKE_VALUE_FOR_DEBUG(TEXT("360000.24"));
 const unsigned int REPARSE_TAG_FOR_TEST = 0x55;
 // {446AA145-BD68-4D6C-AC24-599921595B83}
 static const GUID REPARSE_GUID_FOR_TEST =
@@ -322,6 +322,7 @@ cbt_string ConvertRelativePathToAbsolute(const cbt_string& path, bool acceptDriv
             if (IsDriveLetter(path)) {
                 if (!acceptDriveLetter) {
                     sout << L"The path '" << path << L"' cannot be equal to the drive letter" << std::endl;
+                    return _T("");
                 }
                 return res;
             }
@@ -329,14 +330,14 @@ cbt_string ConvertRelativePathToAbsolute(const cbt_string& path, bool acceptDriv
             const char pathSeparator = '\\';
             if (_wgetcwd(currentDir, _MAX_PATH) == nullptr) {
                 sout << "Error getting current directory." << std::endl;
-                return L"";
+                return _T("");
             }
 #else
             char currentDir[PATH_MAX];
             const char pathSeparator = '/';
             if (getcwd(currentDir, sizeof(currentDir)) == nullptr) {
                 sout << "Error getting current directory." << std::endl;
-                return "";
+                return _T("");
             }
 #endif
             cbt_string currentDirStr(currentDir);
@@ -351,6 +352,7 @@ cbt_string ConvertRelativePathToAbsolute(const cbt_string& path, bool acceptDriv
     }
     else {
         sout << L"Error: The input path is empty." << std::endl;
+        return _T("");
     }
     return res;
 }
@@ -381,12 +383,16 @@ int wmain(int argc, wchar_t* argv[])
                 if (optcmp(arg, _T("-drv")))
                 {
                     cbt_string arg_wstr = ConvertRelativePathToAbsolute(argv[++argi]);
+                    if(arg_wstr.empty()) {
+                        printf("Error: Invalid Driver Path\n");
+                        exit(1); 
+                    }  
                     arg = const_cast<wchar_t*>(arg_wstr.c_str());
                     if (argi < argc)
                     {
                         _tprintf(_T("Installing the driver from '%s'\n"), arg);
                         int drv_reboot = g_Filter.Install(arg, g_lpGuid, NULL,
-                            ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0);
+                            ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0, NULL);
 
                         int errcode = g_Filter.GetLastErrorCode();
                         if (errcode != 0)
@@ -414,10 +420,18 @@ int wmain(int argc, wchar_t* argv[])
                 // if we have not set the placeholder path yet, do this now. Otherwise, set the source path
                 if (pPlaceholderPath == NULL) {
                     cbt_string placeholder_path_wstr = ConvertRelativePathToAbsolute(_tcsdup(arg));
+                    if(placeholder_path_wstr.empty()) {
+                        printf("Error: Invalid Placeholder Path\n");
+                        exit(1); 
+                    } 
                     pPlaceholderPath = _tcsdup(placeholder_path_wstr.c_str());
                 }
                 else {
                     cbt_string source_path_wstr = ConvertRelativePathToAbsolute(_tcsdup(arg));
+                    if(source_path_wstr.empty()) {
+                        printf("Error: Invalid Source Path\n");
+                        exit(1); 
+                    } 
                     pSourcePath = _tcsdup(source_path_wstr.c_str());
                     break; // no more parameters expected
                 }
@@ -541,7 +555,7 @@ void SetFilter(const wchar_t* pPath)
 
 void DeleteFilter()
 {
-    g_Filter.StopFilter(TRUE);
+    g_Filter.StopFilter();
 }
 
  

@@ -1,5 +1,5 @@
 /*
- * CBFS Filter 2022 Java Edition - Sample Project
+ * CBFS Filter 2024 Java Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -171,7 +171,7 @@ class globals {
     }
 }
 
-public class regmon implements CbregistryEventListener {
+public class regmon implements CBRegistryEventListener {
 
     private enum DriverStatus {
         NOT_INSTALLED,
@@ -258,22 +258,22 @@ public class regmon implements CbregistryEventListener {
     private boolean filterWorking;
     private String cabFileLocation;
 
-    private Cbregistry filter;
+    private CBRegistry filter;
     private AtomicInteger eventsCount;
     private long ticksStarted;
 
     private regmon() {
         eventsCount = new AtomicInteger();
 
-        Cbregistry filter = createFilter();
+        CBRegistry filter = createFilter();
         checkDriver(filter);
         disposeFilter(filter);
     }
 
-    private Cbregistry createFilter() {
-        Cbregistry filter = new Cbregistry();
+    private CBRegistry createFilter() {
+        CBRegistry filter = new CBRegistry();
         try {
-            filter.addCbregistryEventListener(this);
+            filter.addCBRegistryEventListener(this);
         }
         catch (Exception err) {
             disposeFilter(filter);
@@ -282,7 +282,7 @@ public class regmon implements CbregistryEventListener {
         return filter;
     }
 
-    private void disposeFilter(Cbregistry filter) {
+    private void disposeFilter(CBRegistry filter) {
         if (filter == null)
             return;
 
@@ -294,7 +294,7 @@ public class regmon implements CbregistryEventListener {
         }
     }
 
-    private void checkDriver(Cbregistry filter) {
+    private void checkDriver(CBRegistry filter) {
         try {
             DriverStatus status = DriverStatus.fromInt(filter.getDriverStatus(PRODUCT_GUID));
             driverRunning = (status == DriverStatus.RUNNING);
@@ -367,10 +367,10 @@ public class regmon implements CbregistryEventListener {
     private void install(String fileName) {
         boolean rebootNeeded = false;
 
-        Cbregistry filter = createFilter();
+        CBRegistry filter = createFilter();
         try {
             System.out.println("Installing the driver from '" + fileName + "'");
-            rebootNeeded = filter.install(fileName, PRODUCT_GUID, null, Constants.INSTALL_REMOVE_OLD_VERSIONS);
+            rebootNeeded = filter.install(fileName, PRODUCT_GUID, null, Constants.INSTALL_REMOVE_OLD_VERSIONS, "");
             checkDriver(filter);
             System.out.print("Drivers installed successfully");
 
@@ -466,6 +466,10 @@ public class regmon implements CbregistryEventListener {
                     if ((arg.charAt(0) == '-') && !stop_opt) {
                         if (arg.equalsIgnoreCase("-drv")) {
                             arg = ConvertRelativePathToAbsolute(args[++argi]);
+                            if (isNullOrEmpty(arg)) {
+                                System.out.println("Invalid Driver Path");
+                                return;
+                            }
                             if (argi < args.length) {
                                 regMonitor.install(arg);
                             }
@@ -524,15 +528,20 @@ public class regmon implements CbregistryEventListener {
             }
             else
             if (!isDriveLetter(path)) {
-                Path fullPath = Paths.get(path).toAbsolutePath().normalize();
-                res = fullPath.toString();
+                try {
+                    Path fullPath = Paths.get(path).toAbsolutePath().normalize();
+                    res = fullPath.toString();
 
-                File file = new File(res);
+                    File file = new File(res);
 
-                if (res.startsWith("\\\\") && !file.exists()) {
-                    System.out.println("The network folder '" + res + "' does not exist.");
-                } else if (!file.exists()) {
-                    System.out.println("The path '" + res + "' does not exist.");
+                    if (res.startsWith("\\\\") && !file.exists()) {
+                        System.out.println("The network folder '" + res + "' does not exist.");
+                    } else if (!file.exists()) {
+                        System.out.println("The path '" + res + "' does not exist.");
+                    }
+                } catch (Exception ex) {
+                    System.out.println(String.format("ConvertRelativePathToAbsolute: exception '%s'", ex.toString()));
+                    return null;
                 }
             }
         }
@@ -719,14 +728,14 @@ public class regmon implements CbregistryEventListener {
         return (KeyContext)context;
     }
 
-    public void afterCloseKey(CbregistryAfterCloseKeyEvent e) {
+    public void afterCloseKey(CBRegistryAfterCloseKeyEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
         log("CloseKey", context.keyName, ERROR_SUCCESS, null);
     }
 
-    public void afterCreateKey(CbregistryAfterCreateKeyEvent e) {
+    public void afterCreateKey(CBRegistryAfterCreateKeyEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
@@ -734,14 +743,14 @@ public class regmon implements CbregistryEventListener {
         log("CreateKey", context.keyName, e.status, details);
     }
 
-    public void afterDeleteKey(CbregistryAfterDeleteKeyEvent e) {
+    public void afterDeleteKey(CBRegistryAfterDeleteKeyEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
         log("DeleteKey", context.keyName, e.status, null);
     }
 
-    public void afterDeleteValue(CbregistryAfterDeleteValueEvent e) {
+    public void afterDeleteValue(CBRegistryAfterDeleteValueEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
@@ -749,7 +758,7 @@ public class regmon implements CbregistryEventListener {
         context.valueName = null;
     }
 
-    public void afterEnumerateKey(CbregistryAfterEnumerateKeyEvent e) {
+    public void afterEnumerateKey(CBRegistryAfterEnumerateKeyEvent e) {
         if (e.status == ERROR_NO_MORE_ITEMS)
             return;
 
@@ -771,7 +780,7 @@ public class regmon implements CbregistryEventListener {
         log("EnumKey", context.keyName, e.status, sb.toString());
     }
 
-    public void afterEnumerateValue(CbregistryAfterEnumerateValueEvent e) {
+    public void afterEnumerateValue(CBRegistryAfterEnumerateValueEvent e) {
         if (e.status == ERROR_NO_MORE_ITEMS)
             return;
 
@@ -816,11 +825,11 @@ public class regmon implements CbregistryEventListener {
     }
 
     @Override
-    public void afterGetKeySecurity(CbregistryAfterGetKeySecurityEvent cbregistryAfterGetKeySecurityEvent) {
+    public void afterGetKeySecurity(CBRegistryAfterGetKeySecurityEvent cbregistryAfterGetKeySecurityEvent) {
 
     }
 
-    public void afterOpenKey(CbregistryAfterOpenKeyEvent e) {
+    public void afterOpenKey(CBRegistryAfterOpenKeyEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
@@ -828,7 +837,7 @@ public class regmon implements CbregistryEventListener {
         log("OpenKey", context.keyName, e.status, details);
     }
 
-    public void afterQueryKey(CbregistryAfterQueryKeyEvent e) {
+    public void afterQueryKey(CBRegistryAfterQueryKeyEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
@@ -846,7 +855,7 @@ public class regmon implements CbregistryEventListener {
         log("QueryKey", context.keyName, e.status, sb.toString());
     }
 
-    public void afterQueryValue(CbregistryAfterQueryValueEvent e) {
+    public void afterQueryValue(CBRegistryAfterQueryValueEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
@@ -885,7 +894,7 @@ public class regmon implements CbregistryEventListener {
                 e.status, sb.toString());
     }
 
-    public void afterRenameKey(CbregistryAfterRenameKeyEvent e) {
+    public void afterRenameKey(CBRegistryAfterRenameKeyEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
@@ -894,7 +903,7 @@ public class regmon implements CbregistryEventListener {
         log("RenameKey", context.keyName, e.status, details);
     }
 
-    public void afterSetKey(CbregistryAfterSetKeyEvent e) {
+    public void afterSetKey(CBRegistryAfterSetKeyEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
@@ -904,11 +913,11 @@ public class regmon implements CbregistryEventListener {
     }
 
     @Override
-    public void afterSetKeySecurity(CbregistryAfterSetKeySecurityEvent cbregistryAfterSetKeySecurityEvent) {
+    public void afterSetKeySecurity(CBRegistryAfterSetKeySecurityEvent cbregistryAfterSetKeySecurityEvent) {
 
     }
 
-    public void afterSetValue(CbregistryAfterSetValueEvent e) {
+    public void afterSetValue(CBRegistryAfterSetValueEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
@@ -946,58 +955,58 @@ public class regmon implements CbregistryEventListener {
         context.clearValue();
     }
 
-    public void beforeCloseKey(CbregistryBeforeCloseKeyEvent e) {
+    public void beforeCloseKey(CBRegistryBeforeCloseKeyEvent e) {
         // not needed in this demo
     }
 
-    public void beforeCreateKey(CbregistryBeforeCreateKeyEvent e) {
+    public void beforeCreateKey(CBRegistryBeforeCreateKeyEvent e) {
         e.keyContext = globals.alloc(new KeyContext(e.fullName, e.desiredAccess));
     }
 
-    public void beforeDeleteKey(CbregistryBeforeDeleteKeyEvent e) {
+    public void beforeDeleteKey(CBRegistryBeforeDeleteKeyEvent e) {
         // not needed in this demo
     }
 
-    public void beforeDeleteValue(CbregistryBeforeDeleteValueEvent e) {
+    public void beforeDeleteValue(CBRegistryBeforeDeleteValueEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
         context.valueName = e.valueName;
     }
 
-    public void beforeEnumerateKey(CbregistryBeforeEnumerateKeyEvent e) {
+    public void beforeEnumerateKey(CBRegistryBeforeEnumerateKeyEvent e) {
         // not needed in this demo
     }
 
-    public void beforeEnumerateValue(CbregistryBeforeEnumerateValueEvent e) {
+    public void beforeEnumerateValue(CBRegistryBeforeEnumerateValueEvent e) {
         // not needed in this demo
     }
 
     @Override
-    public void beforeGetKeySecurity(CbregistryBeforeGetKeySecurityEvent cbregistryBeforeGetKeySecurityEvent) {
+    public void beforeGetKeySecurity(CBRegistryBeforeGetKeySecurityEvent cbregistryBeforeGetKeySecurityEvent) {
 
     }
 
-    public void beforeOpenKey(CbregistryBeforeOpenKeyEvent e) {
+    public void beforeOpenKey(CBRegistryBeforeOpenKeyEvent e) {
         e.keyContext = globals.alloc(new KeyContext(e.fullName, e.desiredAccess));
     }
 
-    public void beforeQueryKey(CbregistryBeforeQueryKeyEvent e) {
+    public void beforeQueryKey(CBRegistryBeforeQueryKeyEvent e) {
         // not needed in this demo
     }
 
-    public void beforeQueryValue(CbregistryBeforeQueryValueEvent e) {
+    public void beforeQueryValue(CBRegistryBeforeQueryValueEvent e) {
         // not needed in this demo
     }
 
-    public void beforeRenameKey(CbregistryBeforeRenameKeyEvent e) {
+    public void beforeRenameKey(CBRegistryBeforeRenameKeyEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
         context.newName = e.newName;
     }
 
-    public void beforeSetKey(CbregistryBeforeSetKeyEvent e) {
+    public void beforeSetKey(CBRegistryBeforeSetKeyEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
@@ -1005,11 +1014,11 @@ public class regmon implements CbregistryEventListener {
     }
 
     @Override
-    public void beforeSetKeySecurity(CbregistryBeforeSetKeySecurityEvent cbregistryBeforeSetKeySecurityEvent) {
+    public void beforeSetKeySecurity(CBRegistryBeforeSetKeySecurityEvent cbregistryBeforeSetKeySecurityEvent) {
 
     }
 
-    public void beforeSetValue(CbregistryBeforeSetValueEvent e) {
+    public void beforeSetValue(CBRegistryBeforeSetValueEvent e) {
         KeyContext context = getContext(e.keyContext);
         if (context == null)
             return;
@@ -1020,26 +1029,26 @@ public class regmon implements CbregistryEventListener {
         context.setBinaryValue(e.binaryValue, e.binaryValueSize);
     }
 
-    public void cleanupKeyContext(CbregistryCleanupKeyContextEvent e) {
+    public void cleanupKeyContext(CBRegistryCleanupKeyContextEvent e) {
         if (e.keyContext != 0) {
             globals.free(e.keyContext);
             e.keyContext = 0;
         }
     }
 
-    public void closeKeyHandle(CbregistryCloseKeyHandleEvent e) {
+    public void closeKeyHandle(CBRegistryCloseKeyHandleEvent e) {
         // not needed in this demo
     }
 
-    public void error(CbregistryErrorEvent e) {
+    public void error(CBRegistryErrorEvent e) {
         System.err.println(String.format("UNEHANDLED EXCEPTION: (%d) %s", e.errorCode, e.description));
     }
 
-    public void workerThreadCreation(CbregistryWorkerThreadCreationEvent e) {
+    public void workerThreadCreation(CBRegistryWorkerThreadCreationEvent e) {
         // not needed in this demo
     }
 
-    public void workerThreadTermination(CbregistryWorkerThreadTerminationEvent e) {
+    public void workerThreadTermination(CBRegistryWorkerThreadTerminationEvent e) {
         // not needed in this demo
     }
 

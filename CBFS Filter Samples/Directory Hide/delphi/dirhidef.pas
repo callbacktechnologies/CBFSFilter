@@ -1,5 +1,5 @@
 (*
- * CBFS Filter 2022 Delphi Edition - Sample Project
+ * CBFS Filter 2024 Delphi Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -145,7 +145,7 @@ implementation
 
 const
    ProgramName = '{713CC6CE-B3E2-4fd9-838D-E28F558F6866}';
-   FakeAltitudeForDebug = '360000';
+   FakeAltitudeForDebug = '360000.24';
 
 function ArrayToString(const Arr: array of Char): string;
 var
@@ -403,7 +403,7 @@ begin
     Exit;
 
   try
-    RebootNeeded := FFilter.Install(dlgOpen.FileName, ProgramName, '', FakeAltitudeForDebug, 0);
+    RebootNeeded := FFilter.Install(dlgOpen.FileName, ProgramName, '', FakeAltitudeForDebug, 0, '');
   except
     on E: ECBFSFilter do
     begin
@@ -465,7 +465,6 @@ begin
   FFilter.Initialize(ProgramName);
 
   FPathToHide := ConvertRelativePathToAbsolute(edtPath.Text);
-
   if FPathToHide = '' then
   begin
     MessageDlg('No directory to hide specified', mtError, [mbOk], 0);
@@ -523,7 +522,7 @@ end;
 procedure TFormDirhide.btnUnhideClick(Sender: TObject);
 begin
   FFilter.DeleteAllFilterRules;
-  FFilter.StopFilter(False);
+  FFilter.StopFilter();
 
   lock.Enter;
   try

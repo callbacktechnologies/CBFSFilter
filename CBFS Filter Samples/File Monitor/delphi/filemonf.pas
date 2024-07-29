@@ -1,5 +1,5 @@
 (*
- * CBFS Filter 2022 Delphi Edition - Sample Project
+ * CBFS Filter 2024 Delphi Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -143,7 +143,7 @@ type
 
 const
    FGuid = '{713CC6CE-B3E2-4fd9-838D-E28F558F6866}';
-   ALTITUDE_FAKE_VALUE_FOR_DEBUG = '360000';
+   ALTITUDE_FAKE_VALUE_FOR_DEBUG = '360000.24';
 
 var
   FormFilemon: TFormFilemon;
@@ -217,6 +217,7 @@ begin
       except
         on E: Exception do
           MessageDlg('Error while converting to absolute path: ' + E.Message, mtError, [mbOk], 0);
+          Exit('');
       end;
     end;
   end;
@@ -413,8 +414,8 @@ begin
   if dlgOpen.Execute then
   begin
     try
-      RebootNeeded := cbfFilter.Install(dlgOpen.FileName, FGuid, '', ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0);
-    except on E: EcbfCBMonitor do
+      RebootNeeded := cbfFilter.Install(dlgOpen.FileName, FGuid, '', ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0, '');
+    except on E: ECBFSFilter do
       begin
         if (E.Code = ERROR_ACCESS_DENIED) or (E.Code = ERROR_PRIVILEGE_NOT_HELD) then
           MessageDlg('Installation requires administrator rights. Run the app as administrator', mtError, [mbOk], 0)
@@ -440,7 +441,7 @@ begin
   begin
     try
       RebootNeeded := cbfFilter.Uninstall(dlgOpen.FileName, FGuid, '', UNINSTALL_VERSION_CURRENT);
-    except on E: EcbfCBMonitor do
+    except on E: ECBFSFilter do
       begin
         if (E.Code = ERROR_ACCESS_DENIED) or (E.Code = ERROR_PRIVILEGE_NOT_HELD) then
           MessageDlg('Uninstallation requires administrator rights. Run the app as administrator', mtError, [mbOk], 0)
@@ -496,7 +497,7 @@ end;
 procedure TFormFilemon.btnDeleteFilterClick(Sender: TObject);
 begin
   cbfFilter.DeleteAllFilterRules;
-  cbfFilter.StopFilter(false);
+  cbfFilter.StopFilter();
 
   lock.Enter;
   try

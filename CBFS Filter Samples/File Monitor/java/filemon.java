@@ -1,5 +1,5 @@
 /*
- * CBFS Filter 2022 Java Edition - Sample Project
+ * CBFS Filter 2024 Java Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -20,17 +20,17 @@ import java.util.regex.Pattern;
 
 import cbfsfilter.*;
 
-public class filemon implements cbfsfilter.CbmonitorEventListener {
-    private final Cbmonitor mWatcher = new Cbmonitor();
+public class filemon implements cbfsfilter.CBMonitorEventListener {
+    private final CBMonitor mWatcher = new CBMonitor();
 
     private final String guid = "{713CC6CE-B3E2-4fd9-838D-E28F558F6866}";
-    private final String ALTITUDE_FAKE_VALUE_FOR_DEBUG = "360000";
+    private final String ALTITUDE_FAKE_VALUE_FOR_DEBUG = "360000.24";
     private final int ERROR_ACCESS_DENIED = 5;
     private final int ERROR_PRIVILEGE_NOT_HELD = 1314;
     private static final Pattern DRIVE_LETTER_PATTERN = Pattern.compile("^[A-Za-z]:$");
     public filemon() {
         try {
-            mWatcher.addCbmonitorEventListener(this);
+            mWatcher.addCBMonitorEventListener(this);
             checkDriver();
         } catch (Exception e) {
             e.printStackTrace();
@@ -111,7 +111,7 @@ public class filemon implements cbfsfilter.CbmonitorEventListener {
         try
         {
             System.out.println("Installing the driver from " + fileName);
-            boolean reboot = mWatcher.install(fileName, guid, "", ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0);
+            boolean reboot = mWatcher.install(fileName, guid, "", ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0, "");
 
             checkDriver();
 
@@ -190,7 +190,7 @@ public class filemon implements cbfsfilter.CbmonitorEventListener {
             mWatcher.deleteAllFilterRules();
             mWatcher.deleteAllPassthroughRules();
             if (mWatcher.isActive())
-                mWatcher.stopFilter(false);
+                mWatcher.stopFilter();
         } catch (CBFSFilterException e) {
             System.out.println("Error in deleteFilter: " + e.getMessage());
         }
@@ -220,6 +220,10 @@ public class filemon implements cbfsfilter.CbmonitorEventListener {
                     if ((arg.charAt(0) == '-') && !stopOpt) {
                         if (arg.equalsIgnoreCase("-drv")) {
                             arg = fileMonitor.ConvertRelativePathToAbsolute(args[++argi]);
+                            if (fileMonitor.isNullOrEmpty(arg)) {
+                                System.out.println("Invalid Driver Path");
+                                return;
+                            }
                             if (argi < args.length) {
                                 fileMonitor.install(arg);
                             }
@@ -230,6 +234,10 @@ public class filemon implements cbfsfilter.CbmonitorEventListener {
                         // if we have not set the path yet, do this now. Otherwise, set the mask
                         if (pathToMonitor == null) {
                             pathToMonitor = fileMonitor.ConvertRelativePathToAbsolute(arg);
+                            if (fileMonitor.isNullOrEmpty(filterPath)) {
+                                System.out.println("Invalid Filter Path");
+                                return;
+                            }
                             if (!new File(pathToMonitor).exists()) {
                                 System.out.println("ERROR: the specified path '" + pathToMonitor
                                         + "' does not point to an existing directory");
@@ -306,15 +314,20 @@ public class filemon implements cbfsfilter.CbmonitorEventListener {
             }
             else
             if (!isDriveLetter(path)) {
-                Path fullPath = Paths.get(path).toAbsolutePath().normalize();
-                res = fullPath.toString();
+                try {
+                    Path fullPath = Paths.get(path).toAbsolutePath().normalize();
+                    res = fullPath.toString();
 
-                File file = new File(res);
+                    File file = new File(res);
 
-                if (res.startsWith("\\\\") && !file.exists()) {
-                    System.out.println("The network folder '" + res + "' does not exist.");
-                } else if (!file.exists()) {
-                    System.out.println("The path '" + res + "' does not exist.");
+                    if (res.startsWith("\\\\") && !file.exists()) {
+                        System.out.println("The network folder '" + res + "' does not exist.");
+                    } else if (!file.exists()) {
+                        System.out.println("The path '" + res + "' does not exist.");
+                    }
+                } catch (Exception ex) {
+                    System.out.println(String.format("ConvertRelativePathToAbsolute: exception '%s'", ex.toString()));
+                    return null;
                 }
             }
         }
@@ -322,203 +335,203 @@ public class filemon implements cbfsfilter.CbmonitorEventListener {
     }
 
     @Override
-    public void afterFilterAttachToVolume(CbmonitorAfterFilterAttachToVolumeEvent cbfilterAfterFilterAttachToVolumeEvent) {
+    public void afterFilterAttachToVolume(CBMonitorAfterFilterAttachToVolumeEvent cbfilterAfterFilterAttachToVolumeEvent) {
 
     }
 
     @Override
-    public void afterFilterDetachFromVolume(CbmonitorAfterFilterDetachFromVolumeEvent cbfilterAfterFilterDetachFromVolumeEvent) {
+    public void afterFilterDetachFromVolume(CBMonitorAfterFilterDetachFromVolumeEvent cbfilterAfterFilterDetachFromVolumeEvent) {
 
     }
 
     @Override
-    public void beforeFilterAttachToVolume(CbmonitorBeforeFilterAttachToVolumeEvent cbfilterBeforeFilterAttachToVolumeEvent) {
+    public void beforeFilterAttachToVolume(CBMonitorBeforeFilterAttachToVolumeEvent cbfilterBeforeFilterAttachToVolumeEvent) {
 
     }
 
     @Override
-    public void error(CbmonitorErrorEvent cbfilterErrorEvent) {
+    public void error(CBMonitorErrorEvent cbfilterErrorEvent) {
 
     }
 
     @Override
-    public void filterStart(CbmonitorFilterStartEvent cbfilterFilterStartEvent) {
+    public void filterStart(CBMonitorFilterStartEvent cbfilterFilterStartEvent) {
 
     }
 
     @Override
-    public void filterStop(CbmonitorFilterStopEvent cbfilterFilterStopEvent) {
+    public void filterStop(CBMonitorFilterStopEvent cbfilterFilterStopEvent) {
         checkDriver();
     }
 
     @Override
-    public void notifyCanFileBeDeleted(CbmonitorNotifyCanFileBeDeletedEvent cbfilterNotifyCanFileBeDeletedEvent) {
+    public void notifyCanFileBeDeleted(CBMonitorNotifyCanFileBeDeletedEvent cbfilterNotifyCanFileBeDeletedEvent) {
 
     }
 
     @Override
-    public void notifyCleanupFile(CbmonitorNotifyCleanupFileEvent cbfilterNotifyCleanupFileEvent) {
+    public void notifyCleanupFile(CBMonitorNotifyCleanupFileEvent cbfilterNotifyCleanupFileEvent) {
 
     }
 
     @Override
-    public void notifyCloseFile(CbmonitorNotifyCloseFileEvent e) {
+    public void notifyCloseFile(CBMonitorNotifyCloseFileEvent e) {
         addToLog("notifyCloseFile", e.fileName, 0);
     }
 
     @Override
-    public void notifyCreateFile(CbmonitorNotifyCreateFileEvent e) {
+    public void notifyCreateFile(CBMonitorNotifyCreateFileEvent e) {
         addToLog("notifyCreateFile", e.fileName, e.status);
     }
 
     @Override
-    public void notifyCreateHardLink(CbmonitorNotifyCreateHardLinkEvent e) {
+    public void notifyCreateHardLink(CBMonitorNotifyCreateHardLinkEvent e) {
         addToLog("notifyCreateHardLink", e.fileName, e.status);
     }
 
     @Override
-    public void notifyDeleteFile(CbmonitorNotifyDeleteFileEvent e) {
+    public void notifyDeleteFile(CBMonitorNotifyDeleteFileEvent e) {
         addToLog("notifyDeleteFile", e.fileName, 0);
 
     }
 
     @Override
-    public void notifyDeleteReparsePoint(CbmonitorNotifyDeleteReparsePointEvent cbmonitorNotifyDeleteReparsePointEvent) {
+    public void notifyDeleteReparsePoint(CBMonitorNotifyDeleteReparsePointEvent cbmonitorNotifyDeleteReparsePointEvent) {
 
     }
 
     @Override
-    public void notifyEnumerateDirectory(CbmonitorNotifyEnumerateDirectoryEvent e) {
+    public void notifyEnumerateDirectory(CBMonitorNotifyEnumerateDirectoryEvent e) {
         addToLog("notifyEnumerateDirectory", e.directoryName + File.separator + e.fileName, e.status);
     }
 
     @Override
-    public void notifyFilterAttachToVolume(CbmonitorNotifyFilterAttachToVolumeEvent cbfilterNotifyFilterAttachToVolumeEvent) {
+    public void notifyFilterAttachToVolume(CBMonitorNotifyFilterAttachToVolumeEvent cbfilterNotifyFilterAttachToVolumeEvent) {
 
     }
 
     @Override
-    public void notifyFilterDetachFromVolume(CbmonitorNotifyFilterDetachFromVolumeEvent cbfilterNotifyFilterDetachFromVolumeEvent) {
+    public void notifyFilterDetachFromVolume(CBMonitorNotifyFilterDetachFromVolumeEvent cbfilterNotifyFilterDetachFromVolumeEvent) {
 
     }
 
     @Override
-    public void notifyFsctl(CbmonitorNotifyFsctlEvent cbfilterNotifyFsctlEvent) {
+    public void notifyFsctl(CBMonitorNotifyFsctlEvent cbfilterNotifyFsctlEvent) {
 
     }
 
     @Override
-    public void notifyGetFileSecurity(CbmonitorNotifyGetFileSecurityEvent cbfilterNotifyGetFileSecurityEvent) {
+    public void notifyGetFileSecurity(CBMonitorNotifyGetFileSecurityEvent cbfilterNotifyGetFileSecurityEvent) {
 
     }
 
     @Override
-    public void notifyGetFileSizes(CbmonitorNotifyGetFileSizesEvent cbfilterNotifyGetFileSizesEvent) {
+    public void notifyGetFileSizes(CBMonitorNotifyGetFileSizesEvent cbfilterNotifyGetFileSizesEvent) {
 
     }
 
     @Override
-    public void notifyGetReparsePoint(CbmonitorNotifyGetReparsePointEvent cbmonitorNotifyGetReparsePointEvent) {
+    public void notifyGetReparsePoint(CBMonitorNotifyGetReparsePointEvent cbmonitorNotifyGetReparsePointEvent) {
 
     }
 
     @Override
-    public void notifyIoctl(CbmonitorNotifyIoctlEvent cbfilterNotifyIoctlEvent) {
+    public void notifyIoctl(CBMonitorNotifyIoctlEvent cbfilterNotifyIoctlEvent) {
 
     }
 
     @Override
-    public void notifyLock(CbmonitorNotifyLockEvent cbfilterNotifyLockEvent) {
+    public void notifyLock(CBMonitorNotifyLockEvent cbfilterNotifyLockEvent) {
 
     }
 
     @Override
-    public void notifyOpenFile(CbmonitorNotifyOpenFileEvent e) {
+    public void notifyOpenFile(CBMonitorNotifyOpenFileEvent e) {
         addToLog("notifyOpenFile", e.fileName, e.status);
     }
 
     @Override
-    public void notifyQueryEa(CbmonitorNotifyQueryEaEvent cbmonitorNotifyQueryEaEvent) {
+    public void notifyQueryEa(CBMonitorNotifyQueryEaEvent cbmonitorNotifyQueryEaEvent) {
 
     }
 
     @Override
-    public void notifyQueryFileInfo(CbmonitorNotifyQueryFileInfoEvent cbfilterNotifyQueryFileInfoEvent) {
+    public void notifyQueryFileInfo(CBMonitorNotifyQueryFileInfoEvent cbfilterNotifyQueryFileInfoEvent) {
 
     }
 
     @Override
-    public void notifyReadFile(CbmonitorNotifyReadFileEvent e) {
+    public void notifyReadFile(CBMonitorNotifyReadFileEvent e) {
         addToLog("notifyReadFile", e.fileName, e.status);
     }
 
     @Override
-    public void notifyRenameOrMoveFile(CbmonitorNotifyRenameOrMoveFileEvent e) {
+    public void notifyRenameOrMoveFile(CBMonitorNotifyRenameOrMoveFileEvent e) {
         addToLog("notifyRenameOrMoveFile", e.fileName, e.status);
     }
 
     @Override
-    public void notifySetAllocationSize(CbmonitorNotifySetAllocationSizeEvent cbfilterNotifySetAllocationSizeEvent) {
+    public void notifySetAllocationSize(CBMonitorNotifySetAllocationSizeEvent cbfilterNotifySetAllocationSizeEvent) {
 
     }
 
     @Override
-    public void notifySetEa(CbmonitorNotifySetEaEvent cbmonitorNotifySetEaEvent) {
+    public void notifySetEa(CBMonitorNotifySetEaEvent cbmonitorNotifySetEaEvent) {
 
     }
 
     @Override
-    public void notifySetFileSize(CbmonitorNotifySetFileSizeEvent cbfilterNotifySetFileSizeEvent) {
+    public void notifySetFileSize(CBMonitorNotifySetFileSizeEvent cbfilterNotifySetFileSizeEvent) {
 
     }
 
     @Override
-    public void notifySetReparsePoint(CbmonitorNotifySetReparsePointEvent cbmonitorNotifySetReparsePointEvent) {
+    public void notifySetReparsePoint(CBMonitorNotifySetReparsePointEvent cbmonitorNotifySetReparsePointEvent) {
 
     }
 
     @Override
-    public void notifySetFileAttributes(CbmonitorNotifySetFileAttributesEvent e) {
+    public void notifySetFileAttributes(CBMonitorNotifySetFileAttributesEvent e) {
         addToLog("notifySetFileAttributes", e.fileName, e.status);
     }
 
     @Override
-    public void notifySetFileInfo(CbmonitorNotifySetFileInfoEvent cbmonitorNotifySetFileInfoEvent) {
+    public void notifySetFileInfo(CBMonitorNotifySetFileInfoEvent cbmonitorNotifySetFileInfoEvent) {
 
     }
 
     @Override
-    public void notifySetFileSecurity(CbmonitorNotifySetFileSecurityEvent e) {
+    public void notifySetFileSecurity(CBMonitorNotifySetFileSecurityEvent e) {
         addToLog("notifySetFileSecurity", e.fileName, e.status);
     }
 
     @Override
-    public void notifyUnlockAll(CbmonitorNotifyUnlockAllEvent cbfilterNotifyUnlockAllEvent) {
+    public void notifyUnlockAll(CBMonitorNotifyUnlockAllEvent cbfilterNotifyUnlockAllEvent) {
 
     }
 
     @Override
-    public void notifyUnlockAllByKey(CbmonitorNotifyUnlockAllByKeyEvent cbfilterNotifyUnlockAllByKeyEvent) {
+    public void notifyUnlockAllByKey(CBMonitorNotifyUnlockAllByKeyEvent cbfilterNotifyUnlockAllByKeyEvent) {
 
     }
 
     @Override
-    public void notifyUnlockSingle(CbmonitorNotifyUnlockSingleEvent cbfilterNotifyUnlockSingleEvent) {
+    public void notifyUnlockSingle(CBMonitorNotifyUnlockSingleEvent cbfilterNotifyUnlockSingleEvent) {
 
     }
 
     @Override
-    public void notifyWriteFile(CbmonitorNotifyWriteFileEvent e) {
+    public void notifyWriteFile(CBMonitorNotifyWriteFileEvent e) {
         addToLog("notifyWriteFile", e.fileName, e.status);
     }
 
     @Override
-    public void workerThreadCreation(CbmonitorWorkerThreadCreationEvent cbfilterWorkerThreadCreationEvent) {
+    public void workerThreadCreation(CBMonitorWorkerThreadCreationEvent cbfilterWorkerThreadCreationEvent) {
 
     }
 
     @Override
-    public void workerThreadTermination(CbmonitorWorkerThreadTerminationEvent cbfilterWorkerThreadTerminationEvent) {
+    public void workerThreadTermination(CBMonitorWorkerThreadTerminationEvent cbfilterWorkerThreadTerminationEvent) {
 
     }
 }

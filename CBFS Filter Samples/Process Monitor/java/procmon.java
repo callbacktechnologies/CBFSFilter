@@ -1,5 +1,5 @@
 /*
- * CBFS Filter 2022 Java Edition - Sample Project
+ * CBFS Filter 2024 Java Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 
 import cbfsfilter.*;
 
-public class procmon implements CbprocessEventListener {
+public class procmon implements CBProcessEventListener {
     private enum DriverStatus {
         NOT_INSTALLED,
         STOPPED,
@@ -99,7 +99,7 @@ public class procmon implements CbprocessEventListener {
 
     private boolean processExecutionDenied;
 
-    private Cbprocess filter;
+    private CBProcess filter;
     private Process process;
 
     private boolean denyExecute = false;
@@ -117,10 +117,10 @@ public class procmon implements CbprocessEventListener {
         disposeFilter(filter);
     }
 
-    private Cbprocess createFilter() {
-        Cbprocess filter = new Cbprocess();
+    private CBProcess createFilter() {
+        CBProcess filter = new CBProcess();
         try {
-            filter.addCbprocessEventListener(this);
+            filter.addCBProcessEventListener(this);
         }
         catch (Exception err) {
             disposeFilter(filter);
@@ -129,7 +129,7 @@ public class procmon implements CbprocessEventListener {
         return filter;
     }
 
-    private void disposeFilter(Cbprocess filter) {
+    private void disposeFilter(CBProcess filter) {
         if (filter == null)
             return;
 
@@ -155,7 +155,7 @@ public class procmon implements CbprocessEventListener {
         process = null;
     }
 
-    private void checkDriver(Cbprocess filter) {
+    private void checkDriver(CBProcess filter) {
         try {
             DriverStatus status = DriverStatus.fromInt(filter.getDriverStatus(PRODUCT_GUID));
             driverRunning = (status == DriverStatus.RUNNING);
@@ -203,10 +203,10 @@ public class procmon implements CbprocessEventListener {
     private void install(String fileName) {
         boolean rebootNeeded;
 
-        Cbprocess filter = createFilter();
+        CBProcess filter = createFilter();
         try {
             System.out.println("Installing the driver from '" + fileName + "'");
-            rebootNeeded = filter.install(fileName, PRODUCT_GUID, null, Constants.INSTALL_REMOVE_OLD_VERSIONS);
+            rebootNeeded = filter.install(fileName, PRODUCT_GUID, null, Constants.INSTALL_REMOVE_OLD_VERSIONS, "");
             checkDriver(filter);
             System.out.print("Drivers installed successfully");
 
@@ -292,6 +292,10 @@ public class procmon implements CbprocessEventListener {
                         if (arg.equalsIgnoreCase("-drv")) {
                             if (argi < args.length) {
                                 arg = ConvertRelativePathToAbsolute(args[++argi]);
+                                if (isNullOrEmpty(arg)) {
+                                    System.out.println("Invalid Driver Path");
+                                    return;
+                                }
                                 procMonitor.install(arg);
                             }
                         } else if (arg.equalsIgnoreCase("-noexec")) {
@@ -371,15 +375,20 @@ public class procmon implements CbprocessEventListener {
             }
             else
             if (!isDriveLetter(path)) {
-                Path fullPath = Paths.get(path).toAbsolutePath().normalize();
-                res = fullPath.toString();
+                try {
+                    Path fullPath = Paths.get(path).toAbsolutePath().normalize();
+                    res = fullPath.toString();
 
-                File file = new File(res);
+                    File file = new File(res);
 
-                if (res.startsWith("\\\\") && !file.exists()) {
-                    System.out.println("The network folder '" + res + "' does not exist.");
-                } else if (!file.exists()) {
-                    System.out.println("The path '" + res + "' does not exist.");
+                    if (res.startsWith("\\\\") && !file.exists()) {
+                        System.out.println("The network folder '" + res + "' does not exist.");
+                    } else if (!file.exists()) {
+                        System.out.println("The path '" + res + "' does not exist.");
+                    }
+                } catch (Exception ex) {
+                    System.out.println(String.format("ConvertRelativePathToAbsolute: exception '%s'", ex.toString()));
+                    return null;
                 }
             }
         }
@@ -455,7 +464,7 @@ public class procmon implements CbprocessEventListener {
         return null;
     }
 
-    public void processCreation(CbprocessProcessCreationEvent e) {
+    public void processCreation(CBProcessProcessCreationEvent e) {
         // Make sure the process is being started by this app
         if (e.creatingProcessId != getCurrentProcessId()) {
             log(String.format("Process %d created by another app -> no action required", e.processId));
@@ -482,7 +491,7 @@ public class procmon implements CbprocessEventListener {
         log( String.format("%s. Id: %d, Process Name: %s", message, e.processId, e.processName));
     }
 
-    public void processHandleOperation(CbprocessProcessHandleOperationEvent e) {
+    public void processHandleOperation(CBProcessProcessHandleOperationEvent e) {
         if (PreventTerminate(e.processId))
         {
             e.desiredAccess &= ~(int)PROCESS_TERMINATE;
@@ -491,17 +500,17 @@ public class procmon implements CbprocessEventListener {
         }
     }
 
-    public void processTermination(CbprocessProcessTerminationEvent e) {
+    public void processTermination(CBProcessProcessTerminationEvent e) {
         log(String.format("Process %d terminated", e.processId));
 
         stopFilter();
     }
 
-    public void threadCreation(CbprocessThreadCreationEvent e) {
+    public void threadCreation(CBProcessThreadCreationEvent e) {
         log(String.format("Thread %d created", e.threadId));
     }
 
-    public void threadHandleOperation(CbprocessThreadHandleOperationEvent e) {
+    public void threadHandleOperation(CBProcessThreadHandleOperationEvent e) {
         log(String.format("Thread %d is being opened with rights 0x%08X", e.threadId, e.desiredAccess));
 
         if (PreventTerminate(e.processId))
@@ -512,19 +521,19 @@ public class procmon implements CbprocessEventListener {
         }
     }
 
-    public void threadTermination(CbprocessThreadTerminationEvent e) {
+    public void threadTermination(CBProcessThreadTerminationEvent e) {
         log(String.format("Thread %d terminated", e.threadId));
     }
 
-    public void error(CbprocessErrorEvent e) {
+    public void error(CBProcessErrorEvent e) {
 
     }
 
-    public void workerThreadCreation(CbprocessWorkerThreadCreationEvent e) {
+    public void workerThreadCreation(CBProcessWorkerThreadCreationEvent e) {
 
     }
 
-    public void workerThreadTermination(CbprocessWorkerThreadTerminationEvent e) {
+    public void workerThreadTermination(CBProcessWorkerThreadTerminationEvent e) {
 
     }
 }

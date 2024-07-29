@@ -1,5 +1,5 @@
 #
-# CBFS Filter 2022 .NET Edition - Sample Project
+# CBFS Filter 2024 .NET Edition - Sample Project
 #
 # This sample project demonstrates the usage of CBFS Filter in a 
 # simple, straightforward way. It is not intended to be a complete 
@@ -16,7 +16,7 @@ ifeq ($(shell uname -s), Darwin) # MACOS
 R_PATH=-Wl,-rpath,../../lib64/,-rpath,.
 
 FRAMEWORK = -framework Carbon -framework Security
-LD_FLAGS = -lcbfsfilter.22.0 -L../../lib64/ -lresolv
+LD_FLAGS = -lcbfsfilter.24.0 -L../../lib64/ -lresolv
 LD_FLAGS_SRC = -lz -lresolv
 OS_CFLAGS = -D UNIX -arch arm64
 MACOS = "darwin% Darwin% macos%"

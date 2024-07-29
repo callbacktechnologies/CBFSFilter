@@ -1,5 +1,5 @@
 (*
- * CBFS Filter 2022 Delphi Edition - Sample Project
+ * CBFS Filter 2024 Delphi Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -78,7 +78,7 @@ type
     FFilter: TcbfCBProcess;
 
     FStarted: Int64;
-	FClosing: boolean;
+    FClosing: boolean;
 
     procedure Log(Text: string);
     procedure AddLogEntry(Time: Integer; const Text: string);
@@ -335,11 +335,11 @@ begin
   Filter := CreateFilter();
   try
     try
-      RebootNeeded := Filter.Install(CabFile, ProductGuid, '', 0);
+      RebootNeeded := Filter.Install(CabFile, ProductGuid, '', 0, '');
       UpdateDriverStatus(Filter);
       UpdateProcessControls();
     except
-      on E: EcbfCBProcess do
+      on E: ECBFSFilter do
       begin
         if (E.Code = ERROR_ACCESS_DENIED) or (E.Code = ERROR_PRIVILEGE_NOT_HELD) then
           MessageDlg('Installation requires administrator rights. Please run the app as Administrator', mtWarning, [mbOk], 0)
@@ -382,7 +382,7 @@ begin
       UpdateDriverStatus(Filter);
       UpdateProcessControls();
     except
-      on E: EcbfCBProcess do
+      on E: ECBFSFilter do
       begin
         if (E.Code = ERROR_ACCESS_DENIED) or (E.Code = ERROR_PRIVILEGE_NOT_HELD) then
           MessageDlg('Uninstallation requires administrator rights. Please run the app as Administrator', mtWarning, [mbOk], 0)
@@ -443,7 +443,6 @@ var
 begin
   lvwEvents.Clear();
 
- if FFilter = nil then
   FFilter := CreateFilter();
   try
     FFilter.Initialize(ProductGuid);
@@ -455,7 +454,7 @@ begin
     FFilter.StartFilter(30000);
     Log('Filter started');
   except
-    on E: EcbfCBProcess do
+    on E: ECBFSFilter do
     begin
       FreeAndNil(FFilter);
       MessageDlg('Filter not started.'#13#10 + E.Message, mtError, [mbOk],0);

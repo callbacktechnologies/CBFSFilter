@@ -186,6 +186,12 @@ object FormRegmon: TFormRegmon
       ExplicitHeight = 300
     end
   end
+  object LogTimer: TTimer
+    Enabled = False
+    OnTimer = LogTimerTimer
+    Left = 400
+    Top = 328
+  end
 end
 
 

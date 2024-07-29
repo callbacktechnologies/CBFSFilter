@@ -1,5 +1,5 @@
 (*
- * CBFS Filter 2022 Delphi Edition - Sample Project
+ * CBFS Filter 2024 Delphi Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -17,10 +17,7 @@ interface
 
 uses
   Windows, WinSvc, Messages, Math, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls, ComCtrls,
-  cbfconstants, cbfcbregistry;
-
-const
-  WM_LOG = WM_USER + 1;
+  SyncObjs, cbfconstants, cbfcbregistry, ExtCtrls;
 
 type
   TFormRegmon = class(TForm)
@@ -37,6 +34,7 @@ type
     btnStop: TButton;
     lblFilename: TLabel;
     Label1: TLabel;
+    LogTimer: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure btnInstallClick(Sender: TObject);
     procedure btnUninstallClick(Sender: TObject);
@@ -45,13 +43,14 @@ type
     procedure btnSelectFileClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+    procedure LogTimerTimer(Sender: TObject);
   private
     FFilter: TcbfCBRegistry;
     FDriverRunning: Boolean;
     FFilterWorking: Boolean;
     FItemsCount: Integer;
     FTicksStarted: Int64;
-	FClosing: boolean;
+    FClosing: boolean;
     NoLog : boolean;
     procedure AskForReboot(IsInstall : boolean);
     function CreateFilter(): TcbfCBRegistry;
@@ -60,8 +59,7 @@ type
     procedure Log(const Operation, Name: string; Status: Integer; const Details: string);
     procedure UpdateControls();
     procedure UpdateDriverStatus(Filter: TcbfCBRegistry);
-    procedure WMLog(var Msg: TMessage); message WM_LOG;
-
+    
     procedure CleanupKeyContextHandler(Sender: TObject; KeyContext: Pointer; var ResultCode: Integer);
 
     procedure BeforeCreateKeyHandler(Sender: TObject; const FullName: String; DesiredAccess: Integer;
@@ -119,6 +117,11 @@ type
       var Processed: Boolean; var StopFiltering: Boolean; var ResultCode: Integer);
   public
     { Public declarations }
+  private
+    FLogCS : TCriticalSection;
+    FLogEntries : TList;
+    procedure CopyLogEntries;
+    procedure ClearLogEntries;
   end;
 
 var
@@ -533,11 +536,11 @@ begin
   Filter := CreateFilter();
   try
     try
-      RebootNeeded := Filter.Install(CabFile, ProductGuid, '', INSTALL_REMOVE_OLD_VERSIONS);
+      RebootNeeded := Filter.Install(CabFile, ProductGuid, '', INSTALL_REMOVE_OLD_VERSIONS, '');
       UpdateDriverStatus(Filter);
       UpdateControls();
     except
-      on E: EcbfCBRegistry do
+      on E: ECBFSFilter do
       begin
         if (E.Code = ERROR_ACCESS_DENIED) or (E.Code = ERROR_PRIVILEGE_NOT_HELD) then
           MessageDlg('Installation requires administrator rights. Please run the app as Administrator', mtWarning, [mbOk], 0)
@@ -583,8 +586,9 @@ begin
     FFilter.SerializeEvents := TcbfcbregistrySerializeEvents.seOnOneWorkerThread;
     FFilter.StartFilter(30000);
     FFilter.AddFilteredProcessByName(edtFilename.Text, false);
+    LogTimer.Enabled := true;
   except
-    on E: EcbfCBRegistry do
+    on E: ECBFSFilter do
     begin
       FreeAndNil(FFilter);
       MessageDlg('Filter not started.'#13#10 + E.Message, mtError, [mbOk],0);
@@ -599,10 +603,15 @@ end;
 procedure TFormRegmon.btnStopClick(Sender: TObject);
 begin
   Assert(FFilterWorking);
-  
+
+  LogTimer.Enabled := false;
+
   if FFilter <> nil then
-	FreeAndNil(FFilter);
-  
+  begin
+    if (FFilter.Active) then
+      FFilter.StopFilter;
+    FreeAndNil(FFilter);
+  end; 
   FFilterWorking := false;
   UpdateControls();
 end;
@@ -631,7 +640,7 @@ begin
       UpdateDriverStatus(Filter);
       UpdateControls();
     except
-      on E: EcbfCBRegistry do
+      on E: ECBFSFilter do
       begin
         if (E.Code = ERROR_ACCESS_DENIED) or (E.Code = ERROR_PRIVILEGE_NOT_HELD) then
           MessageDlg('Uninstallation requires administrator rights. Please run the app as Administrator', mtWarning, [mbOk], 0)
@@ -705,6 +714,8 @@ begin
   FDriverRunning := false;
   FFilterWorking := false;
   NoLog := false;
+  FLogCS := TCriticalSection.Create;
+  FLogEntries := TList.Create;
 
   Filter := CreateFilter();
   try
@@ -720,6 +731,14 @@ procedure TFormRegmon.FormDestroy(Sender: TObject);
 begin
   FClosing := true;
   FreeAndNil(FFilter);
+  FLogCS.Enter;
+  try
+    ClearLogEntries;
+  finally  
+    FLogCS.Leave;
+  end;
+  FreeAndNil(FLogEntries);
+  FreeAndNil(FLogCS);
 end;
 
 procedure TFormRegmon.CleanupKeyContextHandler(Sender: TObject; KeyContext: Pointer; var ResultCode: Integer);
@@ -1071,7 +1090,17 @@ begin
   Ticks := GetTickCount64() - FTicksStarted;
   Entry := NewEntry(Number, Ticks, Operation, Name, Status);
   SetEntryDetails(Entry, Details);
-  PostMessage(Self.Handle, WM_LOG, 0, LParam(Entry));
+  FLogCS.Enter;
+  try
+    FLogEntries.Add(Entry);    
+  finally
+    FLogCS.Leave;
+  end;
+end;
+
+procedure TFormRegmon.LogTimerTimer(Sender: TObject);
+begin
+  CopyLogEntries;
 end;
 
 procedure TFormRegmon.UpdateControls();
@@ -1131,39 +1160,56 @@ begin
   end;
 end;
 
-procedure TFormRegmon.WMLog(var Msg: TMessage);
-var
-  Item: TListItem;
-  Entry: PLogEntry;
-begin
-  if FClosing then 
-    exit;
-  if NoLog then
-    exit;
-  if Msg.LParam = 0 then
-    Exit;
-  Entry := PLogEntry(Msg.LParam);
-  Msg.LParam := 0;
-  Msg.Result := 1;
-  lvwLog.Items.BeginUpdate();
-  try
-    Item := lvwLog.Items.Add();
-    Item.Caption := IntToStr(Entry.Number);
-    Item.SubItems.Add(IntToStr(Entry.Ticks));
-    Item.SubItems.Add(Entry.Operation);
-    Item.SubItems.Add(Entry.Name);
-    Item.SubItems.Add(StatusToStr(Entry.Status));
-    Item.SubItems.Add(Entry.Details);
-  finally
-    lvwLog.Items.EndUpdate();
-    DisposeEntry(Entry);
-  end;
-end;
 
 procedure TFormRegmon.FormCloseQuery(Sender: TObject;
   var CanClose: Boolean);
 begin
   NoLog := true;
+end;
+
+procedure TFormRegmon.CopyLogEntries;
+var Entry : PLogEntry;
+    Item  : TListItem;
+    idx   : integer;
+begin
+  FLogCS.Enter;
+  try
+    lvwLog.Items.BeginUpdate();
+    try
+      while lvwLog.Items.Count > 100 do
+        lvwLog.Items.Delete(0);
+        
+      for idx := 0 to FLogEntries.Count -1 do
+      begin
+        Entry := FLogEntries[idx];
+        Item := lvwLog.Items.Add();
+        Item.Caption := IntToStr(Entry.Number);
+        Item.SubItems.Add(IntToStr(Entry.Ticks));
+        Item.SubItems.Add(Entry.Operation);
+        Item.SubItems.Add(Entry.Name);
+        Item.SubItems.Add(StatusToStr(Entry.Status));
+        Item.SubItems.Add(Entry.Details);          
+      end;
+    finally
+      lvwLog.Items.EndUpdate();
+    end;
+    ClearLogEntries;
+  finally
+    FLogCS.Leave;
+  end;
+end;
+
+procedure TFormRegmon.ClearLogEntries;
+var Entry : PLogEntry;
+    idx : integer;
+begin
+  while (FLogEntries.Count > 0) do
+  begin
+    idx := FLogEntries.Count - 1;
+    Entry := FLogEntries[idx];
+    FLogEntries.Delete(idx);
+    DisposeEntry(Entry);
+  end;
 end;
 
 initialization

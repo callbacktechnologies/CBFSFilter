@@ -1,5 +1,5 @@
 /*
- * CBFS Filter 2022 C++ Edition - Sample Project
+ * CBFS Filter 2024 C++ Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -12,7 +12,7 @@
  * usage and restrictions.
  */
 
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+#define WIN32_LEAN_AND_MEAN        // Exclude rarely-used stuff from Windows headers
 
 #define _CRT_SECURE_NO_DEPRECATE
 #define _CRT_NON_CONFORMING_SWPRINTFS
@@ -189,12 +189,11 @@ FileWatcher g_CBMonitor;
 CRITICAL_SECTION    g_LogListLock = { 0, };
 
 typedef __int64 int64;
-typedef std::wstring comp_string;
 
-const comp_string ALTITUDE_FAKE_VALUE_FOR_DEBUG(TEXT("360000"));
+const cbt_string ALTITUDE_FAKE_VALUE_FOR_DEBUG(TEXT("360000.24"));
 
-const comp_string product_id(TEXT("{713CC6CE-B3E2-4fd9-838D-E28F558F6866}"));
-const comp_string strInvalidOption(TEXT("Invalid option \"%s\"\n"));
+const cbt_string product_id(TEXT("{713CC6CE-B3E2-4fd9-838D-E28F558F6866}"));
+const cbt_string strInvalidOption(TEXT("Invalid option \"%s\"\n"));
 
 const std::string strMonitorError("Error %d (%s)\n");
 
@@ -259,7 +258,7 @@ void CheckDriver()
     }
 }
 
-int optcmp(comp_string arg, string opt)
+int optcmp(cbt_string arg, string opt)
 {
     int i = 0;
     while (1)
@@ -334,6 +333,7 @@ cbt_string ConvertRelativePathToAbsolute(const cbt_string& path, bool acceptDriv
             if (IsDriveLetter(path)) {
                 if (!acceptDriveLetter) {
                     sout << L"The path '" << path << L"' cannot be equal to the drive letter" << std::endl;
+                    return _T("");
                 }
                 return res;
             }
@@ -341,14 +341,14 @@ cbt_string ConvertRelativePathToAbsolute(const cbt_string& path, bool acceptDriv
             const char pathSeparator = '\\';
             if (_wgetcwd(currentDir, _MAX_PATH) == nullptr) {
                 sout << "Error getting current directory." << std::endl;
-                return L"";
+                return _T("");
             }
 #else
             char currentDir[PATH_MAX];
             const char pathSeparator = '/';
             if (getcwd(currentDir, sizeof(currentDir)) == nullptr) {
                 sout << "Error getting current directory." << std::endl;
-                return "";
+                return _T("");
             }
 #endif
             cbt_string currentDirStr(currentDir);
@@ -363,8 +363,9 @@ cbt_string ConvertRelativePathToAbsolute(const cbt_string& path, bool acceptDriv
     }
     else {
         sout << L"Error: The input path is empty." << std::endl;
+        return _T("");
     }
-    return res;
+    return path;
 }
 
 int wmain(int argc, wchar_t* argv[])
@@ -389,7 +390,7 @@ int wmain(int argc, wchar_t* argv[])
 
     for (argi = 1; argi < argc; argi++)
     {
-        comp_string arg = argv[argi];
+        cbt_string arg = argv[argi];
         arg_len = arg.length();
         if (arg_len > 0)
         {
@@ -402,8 +403,12 @@ int wmain(int argc, wchar_t* argv[])
                     {
                         _tprintf(_T("Installing the driver from '%s'\n"), arg.c_str());
                         cbt_string drv_path_wstr = ConvertRelativePathToAbsolute(arg.c_str());
+                        if (drv_path_wstr.empty()) {
+                            printf("Error: Invalid Driver Path\n");
+                            exit(1); 
+                        }
                         drv_reboot = g_CBMonitor.Install(drv_path_wstr.c_str(), product_id.c_str(), NULL,
-                            ALTITUDE_FAKE_VALUE_FOR_DEBUG.c_str(), 0);// cbfConstants::INSTALL_REMOVE_OLD_VERSIONS);
+                            ALTITUDE_FAKE_VALUE_FOR_DEBUG.c_str(), 0, NULL);// cbfConstants::INSTALL_REMOVE_OLD_VERSIONS);
 
                         int errcode = g_CBMonitor.GetLastErrorCode();
                         if (errcode != 0)
@@ -432,6 +437,10 @@ int wmain(int argc, wchar_t* argv[])
                 if (PathToMonitor == NULL)
                 {
                     cbt_string path_to_monitor_wstr = ConvertRelativePathToAbsolute(_tcsdup(arg.c_str()));
+                    if(path_to_monitor_wstr.empty()) {
+                        printf("Error: Invalid Path To Monitor\n");
+                        exit(1); 
+                    }
                     PathToMonitor = _tcsdup(path_to_monitor_wstr.c_str());
                     DWORD attr = GetFileAttributes(PathToMonitor);
                     if (attr == INVALID_FILE_ATTRIBUTES || (attr & FILE_ATTRIBUTE_DIRECTORY) == 0)
@@ -546,6 +555,6 @@ void SetFilter(LPCTSTR PathToMonitor, LPCTSTR FilenameMask)
 
 void DeleteFilter()
 {
-    g_CBMonitor.StopFilter(TRUE);
+    g_CBMonitor.StopFilter();
 }
 

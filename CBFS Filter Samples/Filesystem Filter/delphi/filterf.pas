@@ -1,5 +1,5 @@
 (*
- * CBFS Filter 2022 Delphi Edition - Sample Project
+ * CBFS Filter 2024 Delphi Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -459,7 +459,7 @@ var
 
 const
    FGuid = '{713CC6CE-B3E2-4fd9-838D-E28F558F6866}';
-   ALTITUDE_FAKE_VALUE_FOR_DEBUG = '360000.22';
+   ALTITUDE_FAKE_VALUE_FOR_DEBUG = '360000.24';
 
 implementation
 
@@ -752,7 +752,7 @@ begin
   if dlgOpenDrv.Execute then
   begin
     try
-      RebootNeeded := FFilter.Install(dlgOpenDrv.FileName, FGuid, '', ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0);
+      RebootNeeded := FFilter.Install(dlgOpenDrv.FileName, FGuid, '', ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0, '');
     except on E: ECBFSFilter do
       begin
         if (E.Code = ERROR_ACCESS_DENIED) or (E.Code = ERROR_PRIVILEGE_NOT_HELD) then
@@ -808,7 +808,7 @@ end;
 procedure TFormFilter.btnStopFilterClick(Sender: TObject);
 begin
   try
-    FFilter.StopFilter(false);
+    FFilter.StopFilter();
   except
     On E: Exception do
     MessageDlg(E.Message, mtError, [mbOk], 0);

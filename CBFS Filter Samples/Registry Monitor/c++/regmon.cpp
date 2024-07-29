@@ -1,5 +1,5 @@
 /*
- * CBFS Filter 2022 C++ Edition - Sample Project
+ * CBFS Filter 2024 C++ Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -12,7 +12,7 @@
  * usage and restrictions.
  */
 
-#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+#define WIN32_LEAN_AND_MEAN        // Exclude rarely-used stuff from Windows headers
 
 #define _CRT_SECURE_NO_DEPRECATE
 #define _CRT_NON_CONFORMING_SWPRINTFS
@@ -293,12 +293,11 @@ RegFilter g_CBReg;
 CRITICAL_SECTION    g_LogListLock = { 0, };
 
 typedef __int64 int64;
-typedef std::wstring comp_string;
 
-const comp_string ALTITUDE_FAKE_VALUE_FOR_DEBUG(TEXT("360000"));
+const cbt_string ALTITUDE_FAKE_VALUE_FOR_DEBUG(TEXT("360000.24"));
 
-const comp_string product_id(TEXT("{713CC6CE-B3E2-4fd9-838D-E28F558F6866}"));
-const comp_string strInvalidOption(TEXT("Invalid option \"%s\"\n"));
+const cbt_string product_id(TEXT("{713CC6CE-B3E2-4fd9-838D-E28F558F6866}"));
+const cbt_string strInvalidOption(TEXT("Invalid option \"%s\"\n"));
 
 const std::string strMonitorError("Error %d (%s)\n");
 
@@ -364,7 +363,7 @@ void CheckDriver()
     }
 }
 
-int optcmp(comp_string arg, string opt)
+int optcmp(cbt_string arg, string opt)
 {
     int i = 0;
     while (1)
@@ -439,6 +438,7 @@ cbt_string ConvertRelativePathToAbsolute(const cbt_string& path, bool acceptDriv
             if (IsDriveLetter(path)) {
                 if (!acceptDriveLetter) {
                     sout << L"The path '" << path << L"' cannot be equal to the drive letter" << std::endl;
+                    return _T("");
                 }
                 return res;
             }
@@ -446,14 +446,14 @@ cbt_string ConvertRelativePathToAbsolute(const cbt_string& path, bool acceptDriv
             const char pathSeparator = '\\';
             if (_wgetcwd(currentDir, _MAX_PATH) == nullptr) {
                 sout << "Error getting current directory." << std::endl;
-                return L"";
+                return _T("");
             }
 #else
             char currentDir[PATH_MAX];
             const char pathSeparator = '/';
             if (getcwd(currentDir, sizeof(currentDir)) == nullptr) {
                 sout << "Error getting current directory." << std::endl;
-                return "";
+                return _T("");
             }
 #endif
             cbt_string currentDirStr(currentDir);
@@ -468,6 +468,7 @@ cbt_string ConvertRelativePathToAbsolute(const cbt_string& path, bool acceptDriv
     }
     else {
         sout << L"Error: The input path is empty." << std::endl;
+        return _T("");
     }
     return res;
 }
@@ -493,7 +494,7 @@ int wmain(int argc, wchar_t* argv[])
 
     for (argi = 1; argi < argc; argi++)
     {
-        comp_string arg = argv[argi];
+        cbt_string arg = argv[argi];
         arg_len = arg.length();
         if (arg_len > 0)
         {
@@ -502,10 +503,14 @@ int wmain(int argc, wchar_t* argv[])
                 if (optcmp(arg, "-drv"))
                 {
                     arg = ConvertRelativePathToAbsolute(argv[++argi]);
+                    if(arg.empty()) {
+                        printf("Error: Invalid Driver Path\n");
+                        exit(1); 
+                    } 
                     if (argi < argc)
                     {
                         _tprintf(_T("Installing the driver from '%s'\n"), arg.c_str());
-                        drv_reboot = g_CBReg.Install(arg.c_str(), product_id.c_str(), NULL, 0);// cbfConstants::INSTALL_REMOVE_OLD_VERSIONS);
+                        drv_reboot = g_CBReg.Install(arg.c_str(), product_id.c_str(), NULL, 0, NULL);// cbfConstants::INSTALL_REMOVE_OLD_VERSIONS);
 
                         int errcode = g_CBReg.GetLastErrorCode();
                         if (errcode != 0)
@@ -530,10 +535,8 @@ int wmain(int argc, wchar_t* argv[])
             }
             else
             {
-                // if we have not set the path yet, do this now. Otherwise, set the mask
                 KeyToMonitor = _tcsdup(arg.c_str());
                 break;
-
             }
         }
     }

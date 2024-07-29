@@ -1,5 +1,5 @@
 /*
- * CBFS Filter 2022 Java Edition - Sample Project
+ * CBFS Filter 2024 Java Edition - Sample Project
  *
  * This sample project demonstrates the usage of CBFS Filter in a 
  * simple, straightforward way. It is not intended to be a complete 
@@ -31,12 +31,12 @@ import java.util.regex.Pattern;
 
 import cbfsfilter.*;
 
-public class dirhide implements cbfsfilter.CbfilterEventListener {
-    private Cbfilter cbfFilter = new Cbfilter();
+public class dirhide implements cbfsfilter.CBFilterEventListener {
+    private CBFilter cbfFilter = new CBFilter();
 
     public static final String appName = "Directory Hider";
     private final String guid = "{713CC6CE-B3E2-4fd9-838D-E28F558F6866}";
-    private final String ALTITUDE_FAKE_VALUE_FOR_DEBUG = "360000";
+    private final String ALTITUDE_FAKE_VALUE_FOR_DEBUG = "360000.24";
     private final int ERROR_FILE_NOT_FOUND = 2;
     private final int ERROR_PATH_NOT_FOUND = 3;
     private final int ERROR_ACCESS_DENIED = 5;
@@ -125,7 +125,7 @@ public class dirhide implements cbfsfilter.CbfilterEventListener {
         });
 
         try {
-            cbfFilter.addCbfilterEventListener(this);
+            cbfFilter.addCBFilterEventListener(this);
         } catch (TooManyListenersException e) {
             e.printStackTrace();
         }
@@ -183,7 +183,7 @@ public class dirhide implements cbfsfilter.CbfilterEventListener {
             return;
         try
         {
-            boolean reboot = cbfFilter.install(fc.getSelectedFile().getPath(), guid, "", ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0);
+            boolean reboot = cbfFilter.install(fc.getSelectedFile().getPath(), guid, "", ALTITUDE_FAKE_VALUE_FOR_DEBUG, 0, "");
 
             updateButtons();
 
@@ -244,6 +244,10 @@ public class dirhide implements cbfsfilter.CbfilterEventListener {
             return;
         }
         strPathToHide = ConvertRelativePathToAbsolute(textPath.getText());
+        if (isNullOrEmpty(strPathToHide)) {
+            showMessageBox("Invalid Path To Hide");
+            return;
+        }
 
         File pathToHide = new File(strPathToHide);
 
@@ -304,7 +308,7 @@ public class dirhide implements cbfsfilter.CbfilterEventListener {
             cbfFilter.deleteAllFilterRules();
             cbfFilter.deleteAllPassthroughRules();
             if (cbfFilter.isActive())
-                cbfFilter.stopFilter(false);
+                cbfFilter.stopFilter();
             btnHide.setEnabled(true);
             btnUnhide.setEnabled(false);
         } catch (CBFSFilterException e) {
@@ -391,17 +395,22 @@ public class dirhide implements cbfsfilter.CbfilterEventListener {
             }
             else
             if (!isDriveLetter(path)) {
-                Path fullPath = Paths.get(path).toAbsolutePath().normalize();
-                res = fullPath.toString();
+                try {
+                    Path fullPath = Paths.get(path).toAbsolutePath().normalize();
+                    res = fullPath.toString();
 
-                File file = new File(res);
+                    File file = new File(res);
 
-                if (res.startsWith("\\\\") && !file.exists()) {
-                    JOptionPane.showMessageDialog(null,
-                            "The network folder '" + res + "' does not exist.", getTitle(), JOptionPane.ERROR_MESSAGE);
-                } else if (!file.exists()) {
-                    JOptionPane.showMessageDialog(null,
-                            "The path '" + res + "' does not exist.", getTitle(), JOptionPane.ERROR_MESSAGE);
+                    if (res.startsWith("\\\\") && !file.exists()) {
+                        JOptionPane.showMessageDialog(null,
+                                "The network folder '" + res + "' does not exist.", getTitle(), JOptionPane.ERROR_MESSAGE);
+                    } else if (!file.exists()) {
+                        JOptionPane.showMessageDialog(null,
+                                "The path '" + res + "' does not exist.", getTitle(), JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    showMessageBox(String.format("ConvertRelativePathToAbsolute: exception '%s'", ex.toString()));
+                    return null;
                 }
             }
         }
@@ -429,52 +438,52 @@ public class dirhide implements cbfsfilter.CbfilterEventListener {
     }
 
     @Override
-    public void cleanupContext(CbfilterCleanupContextEvent cbfilterCleanupContextEvent) {
+    public void cleanupContext(CBFilterCleanupContextEvent cbfilterCleanupContextEvent) {
 
     }
 
     @Override
-    public void afterCanFileBeDeleted(CbfilterAfterCanFileBeDeletedEvent cbfilterAfterCanFileBeDeletedEvent) {
+    public void afterCanFileBeDeleted(CBFilterAfterCanFileBeDeletedEvent cbfilterAfterCanFileBeDeletedEvent) {
 
     }
 
     @Override
-    public void afterCleanupFile(CbfilterAfterCleanupFileEvent cbfilterAfterCleanupFileEvent) {
+    public void afterCleanupFile(CBFilterAfterCleanupFileEvent cbfilterAfterCleanupFileEvent) {
 
     }
 
     @Override
-    public void afterCloseEnumeration(CbfilterAfterCloseEnumerationEvent cbfilterAfterCloseEnumerationEvent) {
+    public void afterCloseEnumeration(CBFilterAfterCloseEnumerationEvent cbfilterAfterCloseEnumerationEvent) {
 
     }
 
     @Override
-    public void afterCloseFile(CbfilterAfterCloseFileEvent cbfilterAfterCloseFileEvent) {
+    public void afterCloseFile(CBFilterAfterCloseFileEvent cbfilterAfterCloseFileEvent) {
 
     }
 
     @Override
-    public void afterCreateFile(CbfilterAfterCreateFileEvent cbfilterAfterCreateFileEvent) {
+    public void afterCreateFile(CBFilterAfterCreateFileEvent cbfilterAfterCreateFileEvent) {
 
     }
 
     @Override
-    public void afterCreateHardLink(CbfilterAfterCreateHardLinkEvent cbfilterAfterCreateHardLinkEvent) {
+    public void afterCreateHardLink(CBFilterAfterCreateHardLinkEvent cbfilterAfterCreateHardLinkEvent) {
 
     }
 
     @Override
-    public void afterDeleteFile(CbfilterAfterDeleteFileEvent cbfilterAfterDeleteFileEvent) {
+    public void afterDeleteFile(CBFilterAfterDeleteFileEvent cbfilterAfterDeleteFileEvent) {
 
     }
 
     @Override
-    public void afterDeleteReparsePoint(CbfilterAfterDeleteReparsePointEvent cbfilterAfterDeleteReparsePointEvent) {
+    public void afterDeleteReparsePoint(CBFilterAfterDeleteReparsePointEvent cbfilterAfterDeleteReparsePointEvent) {
 
     }
 
     @Override
-    public void afterEnumerateDirectory(CbfilterAfterEnumerateDirectoryEvent e) {
+    public void afterEnumerateDirectory(CBFilterAfterEnumerateDirectoryEvent e) {
         // if the filesystem returned the name of the directory that we aim to hide, then hide it
         if (e.fileName.equalsIgnoreCase(strOwnNameToHide))
         {
@@ -484,142 +493,142 @@ public class dirhide implements cbfsfilter.CbfilterEventListener {
     }
 
     @Override
-    public void afterFilterAttachToVolume(CbfilterAfterFilterAttachToVolumeEvent cbfilterAfterFilterAttachToVolumeEvent) {
+    public void afterFilterAttachToVolume(CBFilterAfterFilterAttachToVolumeEvent cbfilterAfterFilterAttachToVolumeEvent) {
 
     }
 
     @Override
-    public void afterFilterDetachFromVolume(CbfilterAfterFilterDetachFromVolumeEvent cbfilterAfterFilterDetachFromVolumeEvent) {
+    public void afterFilterDetachFromVolume(CBFilterAfterFilterDetachFromVolumeEvent cbfilterAfterFilterDetachFromVolumeEvent) {
 
     }
 
     @Override
-    public void afterFsctl(CbfilterAfterFsctlEvent cbfilterAfterFsctlEvent) {
+    public void afterFsctl(CBFilterAfterFsctlEvent cbfilterAfterFsctlEvent) {
 
     }
 
     @Override
-    public void afterGetFileSecurity(CbfilterAfterGetFileSecurityEvent cbfilterAfterGetFileSecurityEvent) {
+    public void afterGetFileSecurity(CBFilterAfterGetFileSecurityEvent cbfilterAfterGetFileSecurityEvent) {
 
     }
 
     @Override
-    public void afterGetFileSizes(CbfilterAfterGetFileSizesEvent cbfilterAfterGetFileSizesEvent) {
+    public void afterGetFileSizes(CBFilterAfterGetFileSizesEvent cbfilterAfterGetFileSizesEvent) {
 
     }
 
     @Override
-    public void afterGetReparsePoint(CbfilterAfterGetReparsePointEvent cbfilterAfterGetReparsePointEvent) {
+    public void afterGetReparsePoint(CBFilterAfterGetReparsePointEvent cbfilterAfterGetReparsePointEvent) {
 
     }
 
     @Override
-    public void afterIoctl(CbfilterAfterIoctlEvent cbfilterAfterIoctlEvent) {
+    public void afterIoctl(CBFilterAfterIoctlEvent cbfilterAfterIoctlEvent) {
 
     }
 
     @Override
-    public void afterLock(CbfilterAfterLockEvent cbfilterAfterLockEvent) {
+    public void afterLock(CBFilterAfterLockEvent cbfilterAfterLockEvent) {
 
     }
 
     @Override
-    public void afterOpenFile(CbfilterAfterOpenFileEvent cbfilterAfterOpenFileEvent) {
+    public void afterOpenFile(CBFilterAfterOpenFileEvent cbfilterAfterOpenFileEvent) {
 
     }
 
     @Override
-    public void afterQueryEa(CbfilterAfterQueryEaEvent cbfilterAfterQueryEaEvent) {
+    public void afterQueryEa(CBFilterAfterQueryEaEvent cbfilterAfterQueryEaEvent) {
 
     }
 
     @Override
-    public void afterQueryFileInfo(CbfilterAfterQueryFileInfoEvent cbfilterAfterQueryFileInfoEvent) {
+    public void afterQueryFileInfo(CBFilterAfterQueryFileInfoEvent cbfilterAfterQueryFileInfoEvent) {
 
     }
 
     @Override
-    public void afterReadFile(CbfilterAfterReadFileEvent cbfilterAfterReadFileEvent) {
+    public void afterReadFile(CBFilterAfterReadFileEvent cbfilterAfterReadFileEvent) {
 
     }
 
     @Override
-    public void afterRenameOrMoveFile(CbfilterAfterRenameOrMoveFileEvent cbfilterAfterRenameOrMoveFileEvent) {
+    public void afterRenameOrMoveFile(CBFilterAfterRenameOrMoveFileEvent cbfilterAfterRenameOrMoveFileEvent) {
 
     }
 
     @Override
-    public void afterSetAllocationSize(CbfilterAfterSetAllocationSizeEvent cbfilterAfterSetAllocationSizeEvent) {
+    public void afterSetAllocationSize(CBFilterAfterSetAllocationSizeEvent cbfilterAfterSetAllocationSizeEvent) {
 
     }
 
     @Override
-    public void afterSetEa(CbfilterAfterSetEaEvent cbfilterAfterSetEaEvent) {
+    public void afterSetEa(CBFilterAfterSetEaEvent cbfilterAfterSetEaEvent) {
 
     }
 
     @Override
-    public void afterSetFileSize(CbfilterAfterSetFileSizeEvent cbfilterAfterSetFileSizeEvent) {
+    public void afterSetFileSize(CBFilterAfterSetFileSizeEvent cbfilterAfterSetFileSizeEvent) {
 
     }
 
     @Override
-    public void afterSetReparsePoint(CbfilterAfterSetReparsePointEvent cbfilterAfterSetReparsePointEvent) {
+    public void afterSetReparsePoint(CBFilterAfterSetReparsePointEvent cbfilterAfterSetReparsePointEvent) {
 
     }
 
     @Override
-    public void afterSetFileAttributes(CbfilterAfterSetFileAttributesEvent cbfilterAfterSetFileAttributesEvent) {
+    public void afterSetFileAttributes(CBFilterAfterSetFileAttributesEvent cbfilterAfterSetFileAttributesEvent) {
 
     }
 
     @Override
-    public void afterSetFileInfo(CbfilterAfterSetFileInfoEvent cbfilterAfterSetFileInfoEvent) {
+    public void afterSetFileInfo(CBFilterAfterSetFileInfoEvent cbfilterAfterSetFileInfoEvent) {
 
     }
 
     @Override
-    public void afterSetFileSecurity(CbfilterAfterSetFileSecurityEvent cbfilterAfterSetFileSecurityEvent) {
+    public void afterSetFileSecurity(CBFilterAfterSetFileSecurityEvent cbfilterAfterSetFileSecurityEvent) {
 
     }
 
     @Override
-    public void afterUnlockAll(CbfilterAfterUnlockAllEvent cbfilterAfterUnlockAllEvent) {
+    public void afterUnlockAll(CBFilterAfterUnlockAllEvent cbfilterAfterUnlockAllEvent) {
 
     }
 
     @Override
-    public void afterUnlockAllByKey(CbfilterAfterUnlockAllByKeyEvent cbfilterAfterUnlockAllByKeyEvent) {
+    public void afterUnlockAllByKey(CBFilterAfterUnlockAllByKeyEvent cbfilterAfterUnlockAllByKeyEvent) {
 
     }
 
     @Override
-    public void afterUnlockSingle(CbfilterAfterUnlockSingleEvent cbfilterAfterUnlockSingleEvent) {
+    public void afterUnlockSingle(CBFilterAfterUnlockSingleEvent cbfilterAfterUnlockSingleEvent) {
 
     }
 
     @Override
-    public void afterWriteFile(CbfilterAfterWriteFileEvent cbfilterAfterWriteFileEvent) {
+    public void afterWriteFile(CBFilterAfterWriteFileEvent cbfilterAfterWriteFileEvent) {
 
     }
 
     @Override
-    public void beforeCanFileBeDeleted(CbfilterBeforeCanFileBeDeletedEvent cbfilterBeforeCanFileBeDeletedEvent) {
+    public void beforeCanFileBeDeleted(CBFilterBeforeCanFileBeDeletedEvent cbfilterBeforeCanFileBeDeletedEvent) {
 
     }
 
     @Override
-    public void beforeCleanupFile(CbfilterBeforeCleanupFileEvent cbfilterBeforeCleanupFileEvent) {
+    public void beforeCleanupFile(CBFilterBeforeCleanupFileEvent cbfilterBeforeCleanupFileEvent) {
 
     }
 
     @Override
-    public void beforeCloseFile(CbfilterBeforeCloseFileEvent cbfilterBeforeCloseFileEvent) {
+    public void beforeCloseFile(CBFilterBeforeCloseFileEvent cbfilterBeforeCloseFileEvent) {
 
     }
 
     @Override
-    public void beforeCreateFile(CbfilterBeforeCreateFileEvent e) {
+    public void beforeCreateFile(CBFilterBeforeCreateFileEvent e) {
         if (e.fileName.equalsIgnoreCase(strPathToHide))
         {
             addToLog("beforeCreateFile", e.fileName, ERROR_FILE_NOT_FOUND);
@@ -634,57 +643,57 @@ public class dirhide implements cbfsfilter.CbfilterEventListener {
     }
 
     @Override
-    public void beforeCreateHardLink(CbfilterBeforeCreateHardLinkEvent cbfilterBeforeCreateHardLinkEvent) {
+    public void beforeCreateHardLink(CBFilterBeforeCreateHardLinkEvent cbfilterBeforeCreateHardLinkEvent) {
 
     }
 
     @Override
-    public void beforeDeleteFile(CbfilterBeforeDeleteFileEvent cbfilterBeforeDeleteFileEvent) {
+    public void beforeDeleteFile(CBFilterBeforeDeleteFileEvent cbfilterBeforeDeleteFileEvent) {
 
     }
 
     @Override
-    public void beforeDeleteReparsePoint(CbfilterBeforeDeleteReparsePointEvent cbfilterBeforeDeleteReparsePointEvent) {
+    public void beforeDeleteReparsePoint(CBFilterBeforeDeleteReparsePointEvent cbfilterBeforeDeleteReparsePointEvent) {
 
     }
 
     @Override
-    public void beforeEnumerateDirectory(CbfilterBeforeEnumerateDirectoryEvent cbfilterBeforeEnumerateDirectoryEvent) {
+    public void beforeEnumerateDirectory(CBFilterBeforeEnumerateDirectoryEvent cbfilterBeforeEnumerateDirectoryEvent) {
 
     }
 
     @Override
-    public void beforeFilterAttachToVolume(CbfilterBeforeFilterAttachToVolumeEvent cbfilterBeforeFilterAttachToVolumeEvent) {
+    public void beforeFilterAttachToVolume(CBFilterBeforeFilterAttachToVolumeEvent cbfilterBeforeFilterAttachToVolumeEvent) {
 
     }
 
     @Override
-    public void beforeFsctl(CbfilterBeforeFsctlEvent cbfilterBeforeFsctlEvent) {
+    public void beforeFsctl(CBFilterBeforeFsctlEvent cbfilterBeforeFsctlEvent) {
 
     }
 
     @Override
-    public void beforeGetFileSecurity(CbfilterBeforeGetFileSecurityEvent cbfilterBeforeGetFileSecurityEvent) {
+    public void beforeGetFileSecurity(CBFilterBeforeGetFileSecurityEvent cbfilterBeforeGetFileSecurityEvent) {
 
     }
 
     @Override
-    public void beforeGetReparsePoint(CbfilterBeforeGetReparsePointEvent cbfilterBeforeGetReparsePointEvent) {
+    public void beforeGetReparsePoint(CBFilterBeforeGetReparsePointEvent cbfilterBeforeGetReparsePointEvent) {
 
     }
 
     @Override
-    public void beforeIoctl(CbfilterBeforeIoctlEvent cbfilterBeforeIoctlEvent) {
+    public void beforeIoctl(CBFilterBeforeIoctlEvent cbfilterBeforeIoctlEvent) {
 
     }
 
     @Override
-    public void beforeLock(CbfilterBeforeLockEvent cbfilterBeforeLockEvent) {
+    public void beforeLock(CBFilterBeforeLockEvent cbfilterBeforeLockEvent) {
 
     }
 
     @Override
-    public void beforeOpenFile(CbfilterBeforeOpenFileEvent e) {
+    public void beforeOpenFile(CBFilterBeforeOpenFileEvent e) {
         if (e.fileName.equalsIgnoreCase(strPathToHide))
         {
             addToLog("beforeOpenFile", e.fileName, ERROR_FILE_NOT_FOUND);
@@ -699,273 +708,273 @@ public class dirhide implements cbfsfilter.CbfilterEventListener {
     }
 
     @Override
-    public void beforeQueryEa(CbfilterBeforeQueryEaEvent cbfilterBeforeQueryEaEvent) {
+    public void beforeQueryEa(CBFilterBeforeQueryEaEvent cbfilterBeforeQueryEaEvent) {
 
     }
 
     @Override
-    public void beforeQueryFileInfo(CbfilterBeforeQueryFileInfoEvent cbfilterBeforeQueryFileInfoEvent) {
+    public void beforeQueryFileInfo(CBFilterBeforeQueryFileInfoEvent cbfilterBeforeQueryFileInfoEvent) {
 
     }
 
     @Override
-    public void beforeReadFile(CbfilterBeforeReadFileEvent cbfilterBeforeReadFileEvent) {
+    public void beforeReadFile(CBFilterBeforeReadFileEvent cbfilterBeforeReadFileEvent) {
 
     }
 
     @Override
-    public void beforeRenameOrMoveFile(CbfilterBeforeRenameOrMoveFileEvent cbfilterBeforeRenameOrMoveFileEvent) {
+    public void beforeRenameOrMoveFile(CBFilterBeforeRenameOrMoveFileEvent cbfilterBeforeRenameOrMoveFileEvent) {
 
     }
 
     @Override
-    public void beforeSetAllocationSize(CbfilterBeforeSetAllocationSizeEvent cbfilterBeforeSetAllocationSizeEvent) {
+    public void beforeSetAllocationSize(CBFilterBeforeSetAllocationSizeEvent cbfilterBeforeSetAllocationSizeEvent) {
 
     }
 
     @Override
-    public void beforeSetEa(CbfilterBeforeSetEaEvent cbfilterBeforeSetEaEvent) {
+    public void beforeSetEa(CBFilterBeforeSetEaEvent cbfilterBeforeSetEaEvent) {
 
     }
 
     @Override
-    public void beforeSetFileSize(CbfilterBeforeSetFileSizeEvent cbfilterBeforeSetFileSizeEvent) {
+    public void beforeSetFileSize(CBFilterBeforeSetFileSizeEvent cbfilterBeforeSetFileSizeEvent) {
 
     }
 
     @Override
-    public void beforeSetReparsePoint(CbfilterBeforeSetReparsePointEvent cbfilterBeforeSetReparsePointEvent) {
+    public void beforeSetReparsePoint(CBFilterBeforeSetReparsePointEvent cbfilterBeforeSetReparsePointEvent) {
 
     }
 
     @Override
-    public void beforeSetFileAttributes(CbfilterBeforeSetFileAttributesEvent cbfilterBeforeSetFileAttributesEvent) {
+    public void beforeSetFileAttributes(CBFilterBeforeSetFileAttributesEvent cbfilterBeforeSetFileAttributesEvent) {
 
     }
 
     @Override
-    public void beforeSetFileInfo(CbfilterBeforeSetFileInfoEvent cbfilterBeforeSetFileInfoEvent) {
+    public void beforeSetFileInfo(CBFilterBeforeSetFileInfoEvent cbfilterBeforeSetFileInfoEvent) {
 
     }
 
     @Override
-    public void beforeSetFileSecurity(CbfilterBeforeSetFileSecurityEvent cbfilterBeforeSetFileSecurityEvent) {
+    public void beforeSetFileSecurity(CBFilterBeforeSetFileSecurityEvent cbfilterBeforeSetFileSecurityEvent) {
 
     }
 
     @Override
-    public void beforeUnlockAll(CbfilterBeforeUnlockAllEvent cbfilterBeforeUnlockAllEvent) {
+    public void beforeUnlockAll(CBFilterBeforeUnlockAllEvent cbfilterBeforeUnlockAllEvent) {
 
     }
 
     @Override
-    public void beforeUnlockAllByKey(CbfilterBeforeUnlockAllByKeyEvent cbfilterBeforeUnlockAllByKeyEvent) {
+    public void beforeUnlockAllByKey(CBFilterBeforeUnlockAllByKeyEvent cbfilterBeforeUnlockAllByKeyEvent) {
 
     }
 
     @Override
-    public void beforeUnlockSingle(CbfilterBeforeUnlockSingleEvent cbfilterBeforeUnlockSingleEvent) {
+    public void beforeUnlockSingle(CBFilterBeforeUnlockSingleEvent cbfilterBeforeUnlockSingleEvent) {
 
     }
 
     @Override
-    public void beforeWriteFile(CbfilterBeforeWriteFileEvent cbfilterBeforeWriteFileEvent) {
+    public void beforeWriteFile(CBFilterBeforeWriteFileEvent cbfilterBeforeWriteFileEvent) {
 
     }
 
     @Override
-    public void error(CbfilterErrorEvent cbfilterErrorEvent) {
+    public void error(CBFilterErrorEvent cbfilterErrorEvent) {
 
     }
 
     @Override
-    public void filterStart(CbfilterFilterStartEvent cbfilterFilterStartEvent) {
+    public void filterStart(CBFilterFilterStartEvent cbfilterFilterStartEvent) {
 
     }
 
     @Override
-    public void filterStop(CbfilterFilterStopEvent cbfilterFilterStopEvent) {
+    public void filterStop(CBFilterFilterStopEvent cbfilterFilterStopEvent) {
         if (! closing)
             updateButtons();
     }
 
     @Override
-    public void notifyCanFileBeDeleted(CbfilterNotifyCanFileBeDeletedEvent cbfilterNotifyCanFileBeDeletedEvent) {
+    public void notifyCanFileBeDeleted(CBFilterNotifyCanFileBeDeletedEvent cbfilterNotifyCanFileBeDeletedEvent) {
 
     }
 
     @Override
-    public void notifyCleanupFile(CbfilterNotifyCleanupFileEvent cbfilterNotifyCleanupFileEvent) {
+    public void notifyCleanupFile(CBFilterNotifyCleanupFileEvent cbfilterNotifyCleanupFileEvent) {
 
     }
 
     @Override
-    public void notifyCloseFile(CbfilterNotifyCloseFileEvent cbfilterNotifyCloseFileEvent) {
+    public void notifyCloseFile(CBFilterNotifyCloseFileEvent cbfilterNotifyCloseFileEvent) {
 
     }
 
     @Override
-    public void notifyCreateFile(CbfilterNotifyCreateFileEvent cbfilterNotifyCreateFileEvent) {
+    public void notifyCreateFile(CBFilterNotifyCreateFileEvent cbfilterNotifyCreateFileEvent) {
 
     }
 
     @Override
-    public void notifyCreateHardLink(CbfilterNotifyCreateHardLinkEvent cbfilterNotifyCreateHardLinkEvent) {
+    public void notifyCreateHardLink(CBFilterNotifyCreateHardLinkEvent cbfilterNotifyCreateHardLinkEvent) {
 
     }
 
     @Override
-    public void notifyDeleteFile(CbfilterNotifyDeleteFileEvent cbfilterNotifyDeleteFileEvent) {
+    public void notifyDeleteFile(CBFilterNotifyDeleteFileEvent cbfilterNotifyDeleteFileEvent) {
 
     }
 
     @Override
-    public void notifyDeleteReparsePoint(CbfilterNotifyDeleteReparsePointEvent cbfilterNotifyDeleteReparsePointEvent) {
+    public void notifyDeleteReparsePoint(CBFilterNotifyDeleteReparsePointEvent cbfilterNotifyDeleteReparsePointEvent) {
 
     }
 
     @Override
-    public void notifyEnumerateDirectory(CbfilterNotifyEnumerateDirectoryEvent cbfilterNotifyEnumerateDirectoryEvent) {
+    public void notifyEnumerateDirectory(CBFilterNotifyEnumerateDirectoryEvent cbfilterNotifyEnumerateDirectoryEvent) {
 
     }
 
     @Override
-    public void notifyFilterAttachToVolume(CbfilterNotifyFilterAttachToVolumeEvent cbfilterNotifyFilterAttachToVolumeEvent) {
+    public void notifyFilterAttachToVolume(CBFilterNotifyFilterAttachToVolumeEvent cbfilterNotifyFilterAttachToVolumeEvent) {
 
     }
 
     @Override
-    public void notifyFilterDetachFromVolume(CbfilterNotifyFilterDetachFromVolumeEvent cbfilterNotifyFilterDetachFromVolumeEvent) {
+    public void notifyFilterDetachFromVolume(CBFilterNotifyFilterDetachFromVolumeEvent cbfilterNotifyFilterDetachFromVolumeEvent) {
 
     }
 
     @Override
-    public void notifyFsctl(CbfilterNotifyFsctlEvent cbfilterNotifyFsctlEvent) {
+    public void notifyFsctl(CBFilterNotifyFsctlEvent cbfilterNotifyFsctlEvent) {
 
     }
 
     @Override
-    public void notifyGetFileSecurity(CbfilterNotifyGetFileSecurityEvent cbfilterNotifyGetFileSecurityEvent) {
+    public void notifyGetFileSecurity(CBFilterNotifyGetFileSecurityEvent cbfilterNotifyGetFileSecurityEvent) {
 
     }
 
     @Override
-    public void notifyGetFileSizes(CbfilterNotifyGetFileSizesEvent cbfilterNotifyGetFileSizesEvent) {
+    public void notifyGetFileSizes(CBFilterNotifyGetFileSizesEvent cbfilterNotifyGetFileSizesEvent) {
 
     }
 
     @Override
-    public void notifyGetReparsePoint(CbfilterNotifyGetReparsePointEvent cbfilterNotifyGetReparsePointEvent) {
+    public void notifyGetReparsePoint(CBFilterNotifyGetReparsePointEvent cbfilterNotifyGetReparsePointEvent) {
 
     }
 
     @Override
-    public void notifyIoctl(CbfilterNotifyIoctlEvent cbfilterNotifyIoctlEvent) {
+    public void notifyIoctl(CBFilterNotifyIoctlEvent cbfilterNotifyIoctlEvent) {
 
     }
 
     @Override
-    public void notifyLock(CbfilterNotifyLockEvent cbfilterNotifyLockEvent) {
+    public void notifyLock(CBFilterNotifyLockEvent cbfilterNotifyLockEvent) {
 
     }
 
     @Override
-    public void notifyOpenFile(CbfilterNotifyOpenFileEvent cbfilterNotifyOpenFileEvent) {
+    public void notifyOpenFile(CBFilterNotifyOpenFileEvent cbfilterNotifyOpenFileEvent) {
 
     }
 
     @Override
-    public void notifyQueryEa(CbfilterNotifyQueryEaEvent cbfilterNotifyQueryEaEvent) {
+    public void notifyQueryEa(CBFilterNotifyQueryEaEvent cbfilterNotifyQueryEaEvent) {
 
     }
 
     @Override
-    public void notifyQueryFileInfo(CbfilterNotifyQueryFileInfoEvent cbfilterNotifyQueryFileInfoEvent) {
+    public void notifyQueryFileInfo(CBFilterNotifyQueryFileInfoEvent cbfilterNotifyQueryFileInfoEvent) {
 
     }
 
     @Override
-    public void notifyReadFile(CbfilterNotifyReadFileEvent cbfilterNotifyReadFileEvent) {
+    public void notifyReadFile(CBFilterNotifyReadFileEvent cbfilterNotifyReadFileEvent) {
 
     }
 
     @Override
-    public void notifyRenameOrMoveFile(CbfilterNotifyRenameOrMoveFileEvent cbfilterNotifyRenameOrMoveFileEvent) {
+    public void notifyRenameOrMoveFile(CBFilterNotifyRenameOrMoveFileEvent cbfilterNotifyRenameOrMoveFileEvent) {
 
     }
 
     @Override
-    public void notifySetAllocationSize(CbfilterNotifySetAllocationSizeEvent cbfilterNotifySetAllocationSizeEvent) {
+    public void notifySetAllocationSize(CBFilterNotifySetAllocationSizeEvent cbfilterNotifySetAllocationSizeEvent) {
 
     }
 
     @Override
-    public void notifySetEa(CbfilterNotifySetEaEvent cbfilterNotifySetEaEvent) {
+    public void notifySetEa(CBFilterNotifySetEaEvent cbfilterNotifySetEaEvent) {
 
     }
 
     @Override
-    public void notifySetFileSize(CbfilterNotifySetFileSizeEvent cbfilterNotifySetFileSizeEvent) {
+    public void notifySetFileSize(CBFilterNotifySetFileSizeEvent cbfilterNotifySetFileSizeEvent) {
 
     }
 
     @Override
-    public void notifySetReparsePoint(CbfilterNotifySetReparsePointEvent cbfilterNotifySetReparsePointEvent) {
+    public void notifySetReparsePoint(CBFilterNotifySetReparsePointEvent cbfilterNotifySetReparsePointEvent) {
 
     }
 
     @Override
-    public void notifySetFileAttributes(CbfilterNotifySetFileAttributesEvent cbfilterNotifySetFileAttributesEvent) {
+    public void notifySetFileAttributes(CBFilterNotifySetFileAttributesEvent cbfilterNotifySetFileAttributesEvent) {
 
     }
 
     @Override
-    public void notifySetFileInfo(CbfilterNotifySetFileInfoEvent cbfilterNotifySetFileInfoEvent) {
+    public void notifySetFileInfo(CBFilterNotifySetFileInfoEvent cbfilterNotifySetFileInfoEvent) {
 
     }
 
     @Override
-    public void notifySetFileSecurity(CbfilterNotifySetFileSecurityEvent cbfilterNotifySetFileSecurityEvent) {
+    public void notifySetFileSecurity(CBFilterNotifySetFileSecurityEvent cbfilterNotifySetFileSecurityEvent) {
 
     }
 
     @Override
-    public void notifyUnlockAll(CbfilterNotifyUnlockAllEvent cbfilterNotifyUnlockAllEvent) {
+    public void notifyUnlockAll(CBFilterNotifyUnlockAllEvent cbfilterNotifyUnlockAllEvent) {
 
     }
 
     @Override
-    public void notifyUnlockAllByKey(CbfilterNotifyUnlockAllByKeyEvent cbfilterNotifyUnlockAllByKeyEvent) {
+    public void notifyUnlockAllByKey(CBFilterNotifyUnlockAllByKeyEvent cbfilterNotifyUnlockAllByKeyEvent) {
 
     }
 
     @Override
-    public void notifyUnlockSingle(CbfilterNotifyUnlockSingleEvent cbfilterNotifyUnlockSingleEvent) {
+    public void notifyUnlockSingle(CBFilterNotifyUnlockSingleEvent cbfilterNotifyUnlockSingleEvent) {
 
     }
 
     @Override
-    public void notifyWriteFile(CbfilterNotifyWriteFileEvent cbfilterNotifyWriteFileEvent) {
+    public void notifyWriteFile(CBFilterNotifyWriteFileEvent cbfilterNotifyWriteFileEvent) {
 
     }
 
     @Override
-    public void reparseFileName(CbfilterReparseFileNameEvent cbfilterReparseFileNameEvent) {
+    public void reparseFileName(CBFilterReparseFileNameEvent cbfilterReparseFileNameEvent) {
 
     }
 
     @Override
-    public void reparseWithTag(CbfilterReparseWithTagEvent cbfilterReparseWithTagEvent) {
+    public void reparseWithTag(CBFilterReparseWithTagEvent cbfilterReparseWithTagEvent) {
 
     }
 
     @Override
-    public void workerThreadCreation(CbfilterWorkerThreadCreationEvent cbfilterWorkerThreadCreationEvent) {
+    public void workerThreadCreation(CBFilterWorkerThreadCreationEvent cbfilterWorkerThreadCreationEvent) {
 
     }
 
     @Override
-    public void workerThreadTermination(CbfilterWorkerThreadTerminationEvent cbfilterWorkerThreadTerminationEvent) {
+    public void workerThreadTermination(CBFilterWorkerThreadTerminationEvent cbfilterWorkerThreadTerminationEvent) {
 
     }
 }
