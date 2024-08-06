@@ -18,7 +18,7 @@ CBFS Filter 2024 libraries for the corresponding edition are required to run the
 | [File Monitor](./CBFS%20Filter%20Samples/File%20Monitor) | Monitors and logs filesystem activity. |
 | [FileSystem Filter](./CBFS%20Filter%20Samples/FileSystem%20Filter) | A 'no-op' filesystem filter application that you can add your code to. |
 | [FileSystemWatcher](./CBFS%20Filter%20Samples/FileSystemWatcher) | Emulates the .NET FileSystemWatcher class, but more reliably. |
-| [Isolated Encryption](./CBFS%20Filter%20Samples/Isolated%20Encryption) | TBD. |
+| [Isolated Encryption](./CBFS%20Filter%20Samples/Isolated%20Encryption) | Shows how to use file isolation to encrypt and decrypt files for specific processes. |
 | [Placeholder](./CBFS%20Filter%20Samples/Placeholder) | Illustrates how to replace the placholder file with actual data. |
 | [Process Monitor](./CBFS%20Filter%20Samples/Process%20Monitor) | A basic process monitoring application. |
 | [Registry Monitor](./CBFS%20Filter%20Samples/Registry%20Monitor) | A basic registry monitoring application. |
